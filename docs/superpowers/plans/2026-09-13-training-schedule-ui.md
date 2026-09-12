@@ -29,7 +29,7 @@
 - [x] Task 3: Реализовать безопасный BFF, Telegram bootstrap и нормализацию ошибок
 - [x] Task 4: Реализовать query/mutation state и общий application shell
 - [x] Task 5: Реализовать главную и список программ
-- [ ] Task 6: Реализовать общую create/edit форму программы
+- [x] Task 6: Реализовать общую create/edit форму программы
 - [ ] Task 7: Реализовать просмотр, удаление и запуск active session
 - [ ] Task 8: Завершить responsive/E2E проверку и документацию
 
