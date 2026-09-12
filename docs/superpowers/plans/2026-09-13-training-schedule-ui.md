@@ -30,7 +30,7 @@
 - [x] Task 4: Реализовать query/mutation state и общий application shell
 - [x] Task 5: Реализовать главную и список программ
 - [x] Task 6: Реализовать общую create/edit форму программы
-- [ ] Task 7: Реализовать просмотр, удаление и запуск active session
+- [x] Task 7: Реализовать просмотр, удаление и запуск active session
 - [ ] Task 8: Завершить responsive/E2E проверку и документацию
 
 ---
