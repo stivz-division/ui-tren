@@ -4,7 +4,7 @@
 
 ## Обзор проекта
 
-UI Tren — планируемый mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Application code ещё не создан; текущий репозиторий содержит AI-контекст, архитектурные правила и integration contract.
+UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Создан минимальный Nuxt scaffold с Nuxt UI; продуктовые features ещё не реализованы.
 
 ## Технологический стек
 
@@ -22,6 +22,16 @@ UI Tren — планируемый mobile-first frontend на Nuxt 4 для Tele
 .
 ├── README.md                         # Текущая краткая landing page репозитория
 ├── AGENTS.md                         # Эта карта для AI agents
+├── package.json                      # Dependencies и pnpm scripts
+├── pnpm-lock.yaml                    # Зафиксированное дерево зависимостей
+├── pnpm-workspace.yaml               # pnpm build-script allowlist
+├── .nvmrc                            # Node.js 24.21.0 для локальной разработки
+├── nuxt.config.ts                    # Nuxt UI, CSS и runtime config
+├── tsconfig.json                     # TypeScript config от Nuxt
+├── app/
+│   ├── app.vue                       # Корневой UApp wrapper
+│   ├── assets/css/main.css           # Tailwind CSS и Nuxt UI styles
+│   └── pages/index.vue               # Стартовая страница
 ├── Dockerfile                        # Development image для Nuxt UI
 ├── compose.yml                       # Локальный запуск единственного UI-сервиса
 ├── .env.example                      # Публичные настройки порта и внешнего API
@@ -42,7 +52,7 @@ UI Tren — планируемый mobile-first frontend на Nuxt 4 для Tele
     └── skills/                       # AI Factory skills
 ```
 
-Планируемую структуру application code смотреть в `.ai-factory/ARCHITECTURE.md`; не создавайте пустые каталоги заранее.
+Целевую структуру product features смотреть в `.ai-factory/ARCHITECTURE.md`; не создавайте пустые каталоги заранее.
 
 ## Ключевые entry points
 
@@ -54,6 +64,9 @@ UI Tren — планируемый mobile-first frontend на Nuxt 4 для Tele
 | `.ai-factory/rules/base.md` | Обязательные conventions для будущего application code |
 | `.ai-factory/config.yaml` | Настройки AI Factory; base branch — `master` |
 | `.codex/config.toml` | GitHub и Playwright MCP configuration |
+| `nuxt.config.ts` | Modules, global CSS и server-only `apiBase` |
+| `app/app.vue` | Корневой Nuxt UI provider |
+| `app/pages/index.vue` | Стартовый route `/` |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |
 | `README.md` | Краткая текущая landing page репозитория |
 

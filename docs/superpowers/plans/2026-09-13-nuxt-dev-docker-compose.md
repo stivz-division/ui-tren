@@ -17,7 +17,7 @@
 - Не добавлять production stages, reverse proxy, PostgreSQL, Redis, CI/CD или deploy-скрипты.
 - Использовать `node:24.21.0-alpine`, pnpm и порт контейнера `3000`.
 - Не помещать секреты и локальный `.env` в Git или Docker build context.
-- Полная сборка ожидаемо невозможна до появления `package.json` и `pnpm-lock.yaml` в Nuxt scaffold.
+- Полная Docker-сборка должна проходить с `package.json`, `pnpm-lock.yaml` и `pnpm-workspace.yaml` из Nuxt scaffold.
 
 ---
 
@@ -42,7 +42,7 @@
 - Verify: `docs/superpowers/specs/2026-09-13-nuxt-dev-docker-compose-design.md`
 
 **Interfaces:**
-- Consumes: будущие `package.json` и `pnpm-lock.yaml`, переменные `APP_PORT` и `NUXT_API_BASE`.
+- Consumes: `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, переменные `APP_PORT` и `NUXT_API_BASE`.
 - Produces: сервис Compose `ui`, HTTP endpoint `http://localhost:${APP_PORT:-3000}`, Docker volume `ui_node_modules`.
 
 - [x] **Step 1: Зафиксировать ожидаемое отсутствие конфигурации**
@@ -66,7 +66,7 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -181,7 +181,13 @@ git diff --check
 
 Expected: все команды завершаются с exit code `0`.
 
-Не запускать `docker compose build`, пока отсутствуют `package.json` и `pnpm-lock.yaml`; это известная граница текущего пустого scaffold, а не ошибка Docker-конфигурации.
+Run:
+
+```bash
+docker compose --env-file .env.example build
+```
+
+Expected: image `ui-tren-ui` успешно собирается с зафиксированными pnpm-зависимостями.
 
 - [x] **Step 8: Закоммитить реализацию**
 
