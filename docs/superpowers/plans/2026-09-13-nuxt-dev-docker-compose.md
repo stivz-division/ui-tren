@@ -45,7 +45,7 @@
 - Consumes: будущие `package.json` и `pnpm-lock.yaml`, переменные `APP_PORT` и `NUXT_API_BASE`.
 - Produces: сервис Compose `ui`, HTTP endpoint `http://localhost:${APP_PORT:-3000}`, Docker volume `ui_node_modules`.
 
-- [ ] **Step 1: Зафиксировать ожидаемое отсутствие конфигурации**
+- [x] **Step 1: Зафиксировать ожидаемое отсутствие конфигурации**
 
 Run:
 
@@ -55,7 +55,7 @@ test ! -e Dockerfile && test ! -e compose.yml && test ! -e .dockerignore && test
 
 Expected: PASS, подтверждающий, что новые артефакты ещё не существуют и будут добавлены этой задачей.
 
-- [ ] **Step 2: Создать development Dockerfile**
+- [x] **Step 2: Создать development Dockerfile**
 
 Create `Dockerfile`:
 
@@ -76,7 +76,7 @@ EXPOSE 3000
 CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 ```
 
-- [ ] **Step 3: Создать Compose с одним UI-сервисом**
+- [x] **Step 3: Создать Compose с одним UI-сервисом**
 
 Create `compose.yml`:
 
@@ -101,7 +101,7 @@ volumes:
   ui_node_modules:
 ```
 
-- [ ] **Step 4: Ограничить build context и локальные Git-файлы**
+- [x] **Step 4: Ограничить build context и локальные Git-файлы**
 
 Create `.dockerignore`:
 
@@ -138,7 +138,7 @@ node_modules/
 *.log
 ```
 
-- [ ] **Step 5: Документировать переменные окружения**
+- [x] **Step 5: Документировать переменные окружения**
 
 Create `.env.example`:
 
@@ -147,7 +147,7 @@ APP_PORT=3000
 NUXT_API_BASE=http://host.docker.internal:8000/api
 ```
 
-- [ ] **Step 6: Обновить карту проекта**
+- [x] **Step 6: Обновить карту проекта**
 
 В `AGENTS.md` добавить раздел локального запуска с командами:
 
@@ -161,7 +161,7 @@ NUXT_API_BASE=http://host.docker.internal:8000/api
 Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`.
 ```
 
-- [ ] **Step 7: Проверить Compose и границы конфигурации**
+- [x] **Step 7: Проверить Compose и границы конфигурации**
 
 Run:
 
@@ -183,7 +183,7 @@ Expected: все команды завершаются с exit code `0`.
 
 Не запускать `docker compose build`, пока отсутствуют `package.json` и `pnpm-lock.yaml`; это известная граница текущего пустого scaffold, а не ошибка Docker-конфигурации.
 
-- [ ] **Step 8: Закоммитить реализацию**
+- [x] **Step 8: Закоммитить реализацию**
 
 ```bash
 git add Dockerfile compose.yml .dockerignore .env.example .gitignore AGENTS.md docs/superpowers/plans/2026-09-13-nuxt-dev-docker-compose.md

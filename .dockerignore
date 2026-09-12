@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.agents
+.codex
+.ai-factory
+docs
+node_modules
+.nuxt
+.output
+.data
+.env
+.env.*
+!.env.example
+npm-debug.log*
+pnpm-debug.log*
