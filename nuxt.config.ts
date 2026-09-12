@@ -9,6 +9,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     apiBase: 'http://localhost:8000/api',
+    appEnv: process.env.APP_ENV ?? 'production',
+    telegramInitData: process.env.TELEGRAM_INIT_DATA ?? '',
+    logLevel: process.env.LOG_LEVEL ?? 'warn',
   },
 
   app: {
