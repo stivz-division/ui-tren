@@ -27,10 +27,11 @@ export default defineEventHandler(async (event) => {
   }
   catch (error) {
     const upstream = error as { response?: { status?: number, _data?: unknown } }
+    const status = upstream.response?.status ?? 502
     throw createError({
-      statusCode: upstream.response?.status ?? 502,
+      statusCode: status,
       statusMessage: 'Authentication failed',
-      data: safeUpstreamData(upstream.response?._data),
+      data: safeUpstreamData(upstream.response?._data, status),
     })
   }
 })

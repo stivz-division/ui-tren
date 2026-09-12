@@ -3,7 +3,7 @@ const props = withDefaults(defineProps<{ fallback?: string }>(), { fallback: '/p
 const router = useRouter()
 
 function goBack() {
-  if (window.history.length > 1) router.back()
+  if (typeof window.history.state?.back === 'string') router.back()
   else void navigateTo(props.fallback)
 }
 </script>

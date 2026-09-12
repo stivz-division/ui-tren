@@ -14,9 +14,10 @@ export function useTrainingPrograms() {
   const mutationPending = useState<boolean>('training-programs-mutation', () => false)
   const { request } = useApiClient()
 
-  async function load(force = false): Promise<void> {
+  async function load(force = false, background = false): Promise<void> {
     if (status.value === 'pending' || (status.value === 'success' && !force)) return
-    status.value = 'pending'
+    const previousStatus = status.value
+    if (!background) status.value = 'pending'
     error.value = null
     try {
       programs.value = sortProgramsByWeekday(await fetchTrainingPrograms(request))
@@ -24,7 +25,7 @@ export function useTrainingPrograms() {
     }
     catch (cause) {
       error.value = cause as ApiError
-      status.value = 'error'
+      status.value = background ? previousStatus : 'error'
     }
   }
 
@@ -56,8 +57,27 @@ export function useTrainingPrograms() {
   }
 
   async function remove(programId: number): Promise<void> {
-    await runMutation(() => deleteTrainingProgram(request, programId))
-    programs.value = removeCachedProgram(programs.value, programId)
+    if (mutationPending.value) throw new Error('training_program_mutation_pending')
+    mutationPending.value = true
+    try {
+      try {
+        await deleteTrainingProgram(request, programId)
+      }
+      catch (cause) {
+        const mutationError = cause as ApiError
+        await load(true, true)
+        const deletionIsAuthoritative = status.value === 'success'
+          && !programs.value.some(program => program.id === programId)
+          && (mutationError.status === 0 || mutationError.status === 404 || mutationError.status >= 500)
+        if (deletionIsAuthoritative) return
+        throw cause
+      }
+      programs.value = removeCachedProgram(programs.value, programId)
+      void load(true, true)
+    }
+    finally {
+      mutationPending.value = false
+    }
   }
 
   function findById(programId: number): TrainingProgram | null {

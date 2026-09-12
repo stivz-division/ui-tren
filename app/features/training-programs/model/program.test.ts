@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findNextProgram, formatSetSummary, sortProgramsByWeekday } from './program'
+import { ensureCurrentExerciseOption, findNextProgram, formatExerciseCount, formatSetSummary, sortProgramsByWeekday } from './program'
 
 describe('training program presentation', () => {
   it('groups only adjacent equal sets', () => {
@@ -49,5 +49,25 @@ describe('training program presentation', () => {
 
     expect(sortProgramsByWeekday(programs).map(program => program.id)).toEqual([1, 2])
     expect(programs.map(program => program.id)).toEqual([2, 1])
+  })
+
+  it.each([
+    [1, '1 упражнение'],
+    [2, '2 упражнения'],
+    [5, '5 упражнений'],
+    [11, '11 упражнений'],
+    [22, '22 упражнения'],
+  ])('formats %s exercises in Russian', (count, expected) => {
+    expect(formatExerciseCount(count)).toBe(expected)
+  })
+
+  it('adds a readable fallback for the current exercise missing from the catalog', () => {
+    expect(ensureCurrentExerciseOption([{ id: 20, name: 'Тяга' }], 10)).toEqual([
+      { id: 10, name: 'Упражнение №10' },
+      { id: 20, name: 'Тяга' },
+    ])
+    expect(ensureCurrentExerciseOption([{ id: 10, name: 'Жим лёжа' }], 10)).toEqual([
+      { id: 10, name: 'Жим лёжа' },
+    ])
   })
 })

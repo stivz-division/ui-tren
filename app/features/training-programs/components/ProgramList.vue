@@ -2,22 +2,38 @@
 import { useExerciseCatalog } from '../composables/useExerciseCatalog'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import ProgramCard from './ProgramCard.vue'
+import { useAuth } from '~/features/auth/composables/useAuth'
 
 const { programs, status, error, load } = useTrainingPrograms()
 const catalog = useExerciseCatalog()
-onMounted(() => void Promise.all([load(), catalog.load()]))
+const { status: authStatus } = useAuth()
+const savedScrollPosition = useState('program-list-scroll-position', () => 0)
+
+watch(authStatus, (value) => {
+  if (value === 'authenticated') void Promise.all([load(), catalog.load()])
+}, { immediate: true })
+
+onBeforeRouteLeave(() => {
+  savedScrollPosition.value = window.scrollY
+})
+
+watch(status, async (value) => {
+  if (value !== 'success' || savedScrollPosition.value <= 0) return
+  await nextTick()
+  window.scrollTo({ top: savedScrollPosition.value })
+}, { immediate: true })
 </script>
 
 <template>
   <div>
     <ScreenHeader title="Программа" subtitle="Ваши тренировки по дням">
-      <template #actions><UButton to="/programs/new" label="Создать" icon="i-lucide-plus" color="neutral" variant="ghost" size="lg" /></template>
+      <template #actions><UButton to="/programs/new" label="Создать" icon="i-lucide-plus" color="neutral" variant="ghost" size="lg" class="min-h-11" /></template>
     </ScreenHeader>
     <div v-if="status === 'pending' || status === 'idle'" class="space-y-4" aria-label="Загрузка программ">
       <USkeleton v-for="index in 3" :key="index" class="h-44 rounded-[18px]" />
     </div>
     <UAlert v-else-if="status === 'error'" color="error" icon="i-lucide-circle-alert" title="Не удалось загрузить программы" :description="error?.message">
-      <template #actions><UButton label="Повторить" color="error" variant="soft" @click="load(true)" /></template>
+      <template #actions><UButton label="Повторить" color="error" variant="soft" size="lg" class="min-h-11" @click="load(true)" /></template>
     </UAlert>
     <div v-else-if="programs.length === 0" class="rounded-[18px] border border-default bg-elevated p-8 text-center">
       <UIcon name="i-lucide-clipboard-list" class="mx-auto mb-4 size-12 text-muted" aria-hidden="true" />

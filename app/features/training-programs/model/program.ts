@@ -1,4 +1,4 @@
-import type { PlannedSet, TrainingProgram, Weekday } from '#shared/types/api-tren'
+import type { Exercise, PlannedSet, TrainingProgram, Weekday } from '#shared/types/api-tren'
 
 export const WEEKDAY_LABELS: Record<Weekday, string> = {
   1: 'Понедельник',
@@ -85,4 +85,26 @@ export function findNextProgram(
 
 export function getExerciseFallbackName(exerciseId: number): string {
   return `Упражнение №${exerciseId}`
+}
+
+export function ensureCurrentExerciseOption(
+  exercises: readonly Exercise[],
+  currentExerciseId: number | null,
+): Exercise[] {
+  if (currentExerciseId === null || exercises.some(exercise => exercise.id === currentExerciseId)) {
+    return [...exercises]
+  }
+  return [
+    { id: currentExerciseId, name: getExerciseFallbackName(currentExerciseId) },
+    ...exercises,
+  ]
+}
+
+export function formatExerciseCount(count: number): string {
+  const lastTwoDigits = count % 100
+  const lastDigit = count % 10
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return `${count} упражнений`
+  if (lastDigit === 1) return `${count} упражнение`
+  if (lastDigit >= 2 && lastDigit <= 4) return `${count} упражнения`
+  return `${count} упражнений`
 }

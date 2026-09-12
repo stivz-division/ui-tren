@@ -11,7 +11,7 @@ onMounted(() => {
 <template>
   <div
     v-if="status !== 'authenticated'"
-    class="flex min-h-dvh items-center justify-center bg-default p-5"
+    class="fixed inset-0 z-50 flex min-h-dvh items-center justify-center bg-default p-5"
   >
     <div class="w-full max-w-sm text-center">
       <template v-if="status === 'error'">
@@ -45,5 +45,11 @@ onMounted(() => {
       </template>
     </div>
   </div>
-  <slot v-else />
+  <div
+    :inert="status !== 'authenticated'"
+    :aria-hidden="status !== 'authenticated'"
+    :class="status === 'authenticated' ? '' : 'invisible h-0 overflow-hidden'"
+  >
+    <slot />
+  </div>
 </template>

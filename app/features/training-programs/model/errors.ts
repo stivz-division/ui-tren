@@ -38,17 +38,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseErrorData(value: unknown): ErrorData {
   if (!isRecord(value)) return {}
+  const source = !('code' in value) && !('errors' in value) && isRecord(value.data)
+    ? value.data
+    : value
 
-  const errors = isRecord(value.errors)
+  const errors = isRecord(source.errors)
     ? Object.fromEntries(
-        Object.entries(value.errors).filter((entry): entry is [string, string[]] => (
+        Object.entries(source.errors).filter((entry): entry is [string, string[]] => (
           Array.isArray(entry[1]) && entry[1].every(item => typeof item === 'string')
         )),
       )
     : undefined
 
   return {
-    code: typeof value.code === 'string' ? value.code : undefined,
+    code: typeof source.code === 'string' ? source.code : undefined,
     errors,
   }
 }
@@ -60,6 +63,24 @@ function domainMessage(status: number, code?: string): string | null {
   }
   if (status === 409 && code === 'training_program_mutation_in_progress') {
     return 'Изменение расписания уже выполняется. Повторите попытку.'
+  }
+  if (status === 422 && code === 'exercise_not_found') {
+    return 'Одно из упражнений больше недоступно. Обновите выбор.'
+  }
+  if (status === 422 && code === 'exercise_already_planned') {
+    return 'Одно упражнение выбрано несколько раз.'
+  }
+  if (status === 422 && code === 'training_program_must_contain_exercise') {
+    return 'Добавьте хотя бы одно упражнение.'
+  }
+  if (status === 409 && code === 'active_workout_session_already_exists') {
+    return 'У вас уже есть активная тренировка.'
+  }
+  if (status === 409 && code === 'workout_session_mutation_in_progress') {
+    return 'Изменение тренировки уже выполняется. Повторите попытку.'
+  }
+  if (status === 409 && code === 'invalid_training_program_snapshot') {
+    return 'Программа изменилась. Обновите её перед запуском тренировки.'
   }
   return null
 }
@@ -84,7 +105,7 @@ export function normalizeApiError(error: unknown): ApiError {
       kind: 'validation',
       status,
       code: data.code,
-      message: 'Проверьте заполненные поля',
+      message: message ?? 'Проверьте заполненные поля',
       fieldErrors: Object.fromEntries(
         Object.entries(data.errors ?? {}).map(([path, messages]) => [path, messages[0] ?? 'Некорректное значение']),
       ),

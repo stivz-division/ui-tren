@@ -4,7 +4,7 @@
 
 ## Обзор проекта
 
-UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Создан минимальный Nuxt scaffold с Nuxt UI; продуктовые features ещё не реализованы.
+UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Реализованы недельное расписание, CRUD тренировочных программ, Telegram auth через same-origin BFF и запуск активной тренировки; полный workflow выполнения сессии остаётся отдельной задачей.
 
 ## Технологический стек
 
@@ -14,7 +14,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 - **Backend:** внешний Laravel 13 REST API
 - **База данных:** отсутствует в UI; PostgreSQL принадлежит backend
 - **ORM:** не используется
-- **Тестирование:** планируются Vitest, `@nuxt/test-utils`, Playwright
+- **Тестирование:** Vitest, `@nuxt/test-utils`, Playwright
 
 ## Структура проекта
 
@@ -29,9 +29,20 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 ├── nuxt.config.ts                    # Nuxt UI, CSS и runtime config
 ├── tsconfig.json                     # TypeScript config от Nuxt
 ├── app/
-│   ├── app.vue                       # Корневой UApp wrapper
+│   ├── app.vue                       # UApp и auth gate
 │   ├── assets/css/main.css           # Tailwind CSS и Nuxt UI styles
-│   └── pages/index.vue               # Стартовая страница
+│   ├── components/ui/                # Shell, header, back и bottom navigation
+│   ├── features/auth/                # Telegram bootstrap и in-memory auth state
+│   ├── features/training-programs/   # Schedule API, state, forms и screens
+│   ├── features/workout-sessions/    # Start active session и handoff screen
+│   ├── layouts/default.vue           # Общий AppShell
+│   └── pages/                        # Тонкие routes /, /programs*, /workout-session
+├── server/
+│   ├── api/auth.post.ts              # Telegram initData -> HttpOnly session cookie
+│   ├── api/api-tren/[...path].ts     # Allowlisted authenticated Laravel proxy
+│   └── utils/api-tren/               # Proxy paths, cookie и safe error helpers
+├── shared/types/api-tren.ts          # Wire DTO Laravel API
+├── tests/e2e/                        # Playwright Telegram/mobile scenarios
 ├── Dockerfile                        # Development image для Nuxt UI
 ├── compose.yml                       # Локальный запуск единственного UI-сервиса
 ├── .env.example                      # Публичные настройки порта и внешнего API
@@ -52,7 +63,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
     └── skills/                       # AI Factory skills
 ```
 
-Целевую структуру product features смотреть в `.ai-factory/ARCHITECTURE.md`; не создавайте пустые каталоги заранее.
+Модульные границы и дальнейшую целевую структуру смотреть в `.ai-factory/ARCHITECTURE.md`; не создавайте пустые каталоги заранее.
 
 ## Ключевые entry points
 
@@ -66,7 +77,10 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `.codex/config.toml` | GitHub и Playwright MCP configuration |
 | `nuxt.config.ts` | Modules, global CSS и server-only `apiBase` |
 | `app/app.vue` | Корневой Nuxt UI provider |
-| `app/pages/index.vue` | Стартовый route `/` |
+| `app/pages/index.vue` | Главная с тренировкой сегодня или rest day |
+| `app/pages/programs/` | Список, создание, просмотр и редактирование программ |
+| `server/api/auth.post.ts` | BFF auth; local `TELEGRAM_INIT_DATA` override |
+| `server/api/api-tren/[...path].ts` | Узкий allowlisted proxy к Laravel API |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |
 | `README.md` | Краткая текущая landing page репозитория |
 
@@ -76,7 +90,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 - `docker compose build`
 - `docker compose up`
 
-Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`.
+Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`. При `APP_ENV=local` непустой server-only `TELEGRAM_INIT_DATA` заменяет browser `initData` для авторизации.
 
 ## Документация
 

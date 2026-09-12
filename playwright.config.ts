@@ -8,6 +8,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
+    channel: 'chrome',
     colorScheme: 'light',
     trace: 'retain-on-failure',
   },
@@ -26,8 +27,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx --yes pnpm@12.4.1 dev --host 127.0.0.1 --port ${PORT}`,
+    command: `./node_modules/.bin/nuxt dev --host 127.0.0.1 --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
+    env: {
+      APP_ENV: 'local',
+      TELEGRAM_INIT_DATA: 'e2e-server-init-data',
+    },
   },
 })

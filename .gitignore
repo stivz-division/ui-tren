@@ -7,4 +7,7 @@ node_modules/
 .data/
 .idea/
 *.log
+test-results/
+playwright-report/
+.nuxtrc
 .worktrees/

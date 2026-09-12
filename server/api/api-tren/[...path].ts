@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: status,
       statusMessage: 'API request failed',
-      data: safeUpstreamData(upstream.response?._data),
+      data: safeUpstreamData(upstream.response?._data, status),
     })
   }
 })

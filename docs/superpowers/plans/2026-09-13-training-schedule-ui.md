@@ -31,7 +31,7 @@
 - [x] Task 5: Реализовать главную и список программ
 - [x] Task 6: Реализовать общую create/edit форму программы
 - [x] Task 7: Реализовать просмотр, удаление и запуск active session
-- [ ] Task 8: Завершить responsive/E2E проверку и документацию
+- [x] Task 8: Завершить responsive/E2E проверку и документацию
 
 ---
 
@@ -323,23 +323,23 @@
 - Consumes: all completed routes and test fixtures.
 - Produces: reproducible acceptance suite and accurate project map.
 
-- [ ] **Step 1: RED — add full mocked-Telegram E2E journeys**
+- [x] **Step 1: RED — add full mocked-Telegram E2E journeys**
 
   Cover home training/rest, list/empty/error, create/edit, delete cancel/confirm, 401 re-auth, 404, 409, 422, keyboard traversal, and absence of `~45 минут`. Run focused Playwright and confirm failures before fixing integration gaps.
 
-- [ ] **Step 2: GREEN — resolve integration and responsive gaps**
+- [x] **Step 2: GREEN — resolve integration and responsive gaps**
 
   Run at 320/375/430 px, use long program/exercise names and 200% text zoom, assert no horizontal overflow, bottom navigation/sheet safe-area padding, and minimum bounding boxes of 44 px for primary controls.
 
-- [ ] **Step 3: Perform visual comparison against all six PNGs**
+- [x] **Step 3: Perform visual comparison against all six PNGs**
 
   Capture deterministic screenshots for home workout, home rest, list, create, detail, and edit. Compare hierarchy, spacing, type scale, card radii, green/red semantics, and record only the spec-approved deviations in the final handoff.
 
-- [ ] **Step 4: Update factual documentation**
+- [x] **Step 4: Update factual documentation**
 
   Document scripts, BFF cookie flow, new feature directories/routes, `NUXT_API_BASE`, test commands, and the unresolved `GET /api/exercises` dependency. Preserve the contents of the existing user-authored `docs/training-schedule.md` and `docs/workout-session.md` unless a link-only correction is required.
 
-- [ ] **Step 5: Run the complete verification matrix**
+- [x] **Step 5: Run the complete verification matrix**
 
   Run:
 
@@ -354,6 +354,6 @@
 
   Expected: every command exits 0 without errors. Then run `git diff --check` and inspect `git status --short` to confirm only intended files changed.
 
-- [ ] **Step 6: Record external acceptance limitation truthfully**
+- [x] **Step 6: Record external acceptance limitation truthfully**
 
   Attempt real Telegram WebView validation only if a deployed HTTPS Mini App URL and bot configuration are available. If absent, report it as unverified and do not claim full production acceptance; separately report that the exercise catalog endpoint remains a backend blocker.

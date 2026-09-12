@@ -3,12 +3,12 @@ import type { Weekday } from '#shared/types/api-tren'
 import { WEEKDAY_SHORT_LABELS } from '../model/program'
 
 const model = defineModel<Weekday | null>({ required: true })
-withDefaults(defineProps<{ occupied?: Weekday[], readonly?: boolean }>(), { occupied: () => [], readonly: false })
+withDefaults(defineProps<{ occupied?: Weekday[], readonly?: boolean, invalid?: boolean }>(), { occupied: () => [], readonly: false, invalid: false })
 const days = [1, 2, 3, 4, 5, 6, 7] as Weekday[]
 </script>
 
 <template>
-  <fieldset>
+  <fieldset :aria-invalid="invalid || undefined" :tabindex="invalid ? -1 : undefined">
     <legend class="mb-3 text-base font-medium text-toned">День недели</legend>
     <div v-if="readonly" class="flex min-h-14 items-center gap-3 rounded-xl border border-default bg-muted px-4 text-lg text-muted">
       <UIcon name="i-lucide-lock" class="size-5" aria-hidden="true" />

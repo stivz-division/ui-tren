@@ -21,12 +21,11 @@ export function clearApiTrenToken(event: H3Event): void {
   deleteCookie(event, SESSION_COOKIE, { path: '/' })
 }
 
-export function safeUpstreamData(value: unknown): unknown {
-  if (!value || typeof value !== 'object') return undefined
+export function safeUpstreamData(value: unknown, status: number): unknown {
+  if (status >= 500 || !value || typeof value !== 'object') return undefined
   const data = value as Record<string, unknown>
   return {
     code: typeof data.code === 'string' ? data.code : undefined,
-    message: typeof data.message === 'string' ? data.message : undefined,
-    errors: typeof data.errors === 'object' ? data.errors : undefined,
+    errors: status === 422 && typeof data.errors === 'object' ? data.errors : undefined,
   }
 }

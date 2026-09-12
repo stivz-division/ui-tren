@@ -13,7 +13,7 @@ const exerciseName = (id: number) => props.catalog.find(item => item.id === id)?
 <template>
   <div>
     <ScreenHeader :title="program.name" back>
-      <template #actions><UButton :to="`/programs/${program.id}/edit`" label="Редактировать" icon="i-lucide-pencil" variant="ghost" size="lg" /></template>
+      <template #actions><UButton :to="`/programs/${program.id}/edit`" label="Редактировать" icon="i-lucide-pencil" variant="ghost" size="lg" class="min-h-11" /></template>
     </ScreenHeader>
     <div class="mb-8 inline-flex min-h-12 items-center gap-3 rounded-xl border border-default bg-muted px-4 text-lg text-muted"><UIcon name="i-lucide-calendar-days" class="size-5" aria-hidden="true" />{{ WEEKDAY_LABELS[program.weekday] }}</div>
     <section aria-labelledby="detail-exercises">
