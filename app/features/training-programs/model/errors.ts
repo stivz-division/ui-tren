@@ -1,0 +1,105 @@
+export type ApiErrorKind =
+  | 'authentication'
+  | 'not-found'
+  | 'conflict'
+  | 'validation'
+  | 'rate-limit'
+  | 'network'
+  | 'server'
+
+export interface ApiError {
+  kind: ApiErrorKind
+  status: number
+  code?: string
+  message: string
+  fieldErrors?: Record<string, string>
+  retryAfter?: number
+}
+
+interface ErrorLike {
+  status?: number
+  statusCode?: number
+  data?: unknown
+  response?: {
+    status?: number
+    headers?: Headers
+    _data?: unknown
+  }
+}
+
+interface ErrorData {
+  code?: string
+  errors?: Record<string, string[]>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function parseErrorData(value: unknown): ErrorData {
+  if (!isRecord(value)) return {}
+
+  const errors = isRecord(value.errors)
+    ? Object.fromEntries(
+        Object.entries(value.errors).filter((entry): entry is [string, string[]] => (
+          Array.isArray(entry[1]) && entry[1].every(item => typeof item === 'string')
+        )),
+      )
+    : undefined
+
+  return {
+    code: typeof value.code === 'string' ? value.code : undefined,
+    errors,
+  }
+}
+
+function domainMessage(status: number, code?: string): string | null {
+  if (status === 404 && code === 'training_program_not_found') return 'Программа не найдена'
+  if (status === 409 && code === 'training_program_already_exists') {
+    return 'На выбранный день программа уже создана'
+  }
+  if (status === 409 && code === 'training_program_mutation_in_progress') {
+    return 'Изменение расписания уже выполняется. Повторите попытку.'
+  }
+  return null
+}
+
+export function normalizeApiError(error: unknown): ApiError {
+  if (!isRecord(error)) {
+    return { kind: 'network', status: 0, message: 'Не удалось связаться с сервисом. Проверьте соединение.' }
+  }
+
+  const errorLike = error as ErrorLike
+  const status = errorLike.statusCode ?? errorLike.status ?? errorLike.response?.status ?? 0
+  const data = parseErrorData(errorLike.data ?? errorLike.response?._data)
+  const retryAfterHeader = errorLike.response?.headers?.get('retry-after')
+  const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : undefined
+  const message = domainMessage(status, data.code)
+
+  if (status === 401) return { kind: 'authentication', status, code: data.code, message: 'Требуется повторная авторизация' }
+  if (status === 404) return { kind: 'not-found', status, code: data.code, message: message ?? 'Данные не найдены' }
+  if (status === 409) return { kind: 'conflict', status, code: data.code, message: message ?? 'Состояние изменилось. Обновите данные.' }
+  if (status === 422) {
+    return {
+      kind: 'validation',
+      status,
+      code: data.code,
+      message: 'Проверьте заполненные поля',
+      fieldErrors: Object.fromEntries(
+        Object.entries(data.errors ?? {}).map(([path, messages]) => [path, messages[0] ?? 'Некорректное значение']),
+      ),
+    }
+  }
+  if (status === 429) {
+    return {
+      kind: 'rate-limit',
+      status,
+      code: data.code,
+      message: 'Слишком много запросов. Попробуйте немного позже.',
+      retryAfter: Number.isFinite(retryAfter) ? retryAfter : undefined,
+    }
+  }
+  if (status >= 500) return { kind: 'server', status, code: data.code, message: 'Сервис временно недоступен. Повторите попытку.' }
+
+  return { kind: 'network', status, code: data.code, message: 'Не удалось выполнить запрос. Повторите попытку.' }
+}

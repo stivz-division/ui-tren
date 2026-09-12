@@ -25,7 +25,7 @@
 ## Tasks
 
 - [x] Task 1: Настроить quality toolchain и test harness
-- [ ] Task 2: Реализовать wire types и чистую доменную модель расписания
+- [x] Task 2: Реализовать wire types и чистую доменную модель расписания
 - [ ] Task 3: Реализовать безопасный BFF, Telegram bootstrap и нормализацию ошибок
 - [ ] Task 4: Реализовать query/mutation state и общий application shell
 - [ ] Task 5: Реализовать главную и список программ
