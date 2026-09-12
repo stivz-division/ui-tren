@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "nuxt": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nuxt/SKILL.md",
+      "computedHash": "96dbdbfc06bf7045aeb9a463b972d5c0b5679d6dadf196d8ef6b98dc6defed2d"
+    },
+    "nuxt-ui": {
+      "source": "nuxt/ui",
+      "sourceType": "github",
+      "skillPath": "skills/nuxt-ui/SKILL.md",
+      "computedHash": "f6235ff66b930f4fe3809a55167096c9626ebb806f767fe363f19384e0d84c87"
+    },
+    "vue-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-best-practices/SKILL.md",
+      "computedHash": "3df585ad31aec78fe55c56c1411262737e6b231677a3153dec512a882fde80cd"
+    }
+  }
+}
