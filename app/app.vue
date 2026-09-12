@@ -4,6 +4,10 @@ import { ru } from '@nuxt/ui/locale'
 
 <template>
   <UApp :locale="ru">
-    <NuxtPage />
+    <AuthGate>
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </AuthGate>
   </UApp>
 </template>
