@@ -9,9 +9,14 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "format:check": "eslint .",
     "generate": "nuxt generate",
+    "lint": "eslint .",
     "postinstall": "nuxt prepare",
     "preview": "nuxt preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:unit": "vitest run",
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
@@ -22,7 +27,15 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.131",
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.2",
+    "@playwright/test": "^1.63.0",
+    "@vue/test-utils": "^2.5.0",
+    "eslint": "^10.10.0",
+    "happy-dom": "^20.14.3",
     "typescript": "^6.0.3",
+    "vitest": "^5.0.0",
     "vue-tsc": "^3.3.11"
   }
 }
