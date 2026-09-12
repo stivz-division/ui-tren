@@ -65,10 +65,10 @@ export function useTrainingPrograms() {
   }
 
   return {
-    programs: readonly(programs),
-    status: readonly(status),
-    error: readonly(error),
-    mutationPending: readonly(mutationPending),
+    programs: computed(() => programs.value),
+    status: computed(() => status.value),
+    error: computed(() => error.value),
+    mutationPending: computed(() => mutationPending.value),
     load,
     create,
     update,

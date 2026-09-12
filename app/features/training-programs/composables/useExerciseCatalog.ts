@@ -30,5 +30,11 @@ export function useExerciseCatalog() {
     return exercises.value.find(exercise => exercise.id === exerciseId)?.name ?? getExerciseFallbackName(exerciseId)
   }
 
-  return { exercises: readonly(exercises), status: readonly(status), error: readonly(error), load, getName }
+  return {
+    exercises: computed(() => exercises.value),
+    status: computed(() => status.value),
+    error: computed(() => error.value),
+    load,
+    getName,
+  }
 }
