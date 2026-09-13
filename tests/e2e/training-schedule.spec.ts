@@ -139,7 +139,11 @@ test('program list is sorted and renders grouped adjacent sets', async ({ page }
   const weekday = fixtureWeekday
   const nextWeekday = weekday === 7 ? 1 : weekday + 1
   await expect(cards.first()).toContainText(weekday < nextWeekday ? 'Грудь и трицепс' : 'Спина и бицепс')
-  await expect(cards.filter({ hasText: 'Грудь и трицепс' })).toContainText('2×6 100 кг, 1×3 140 кг')
+  const chestCard = cards.filter({ hasText: 'Грудь и трицепс' })
+  await expect(chestCard).toContainText('2×6')
+  await expect(chestCard).toContainText('Рабочий вес: 100 кг')
+  await expect(chestCard).toContainText('1×3')
+  await expect(chestCard).toContainText('Рабочий вес: 140 кг')
   await expect(page.getByText('~45 минут')).toHaveCount(0)
 })
 

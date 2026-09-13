@@ -17,13 +17,16 @@ const exerciseName = (id: number) => props.catalog.find(item => item.id === id)?
     </ScreenHeader>
     <div class="mb-8 inline-flex min-h-12 items-center gap-3 rounded-xl border border-default bg-muted px-4 text-lg text-muted"><UIcon name="i-lucide-calendar-days" class="size-5" aria-hidden="true" />{{ WEEKDAY_LABELS[program.weekday] }}</div>
     <section aria-labelledby="detail-exercises">
-      <h2 id="detail-exercises" class="mb-4 text-2xl font-bold text-highlighted">Упражнения</h2>
-      <ul class="space-y-3">
-        <li v-for="exercise in program.exercises" :key="exercise.position" class="flex min-h-24 items-center gap-4 rounded-[18px] border border-default bg-elevated p-4">
-          <UIcon name="i-lucide-dumbbell" class="size-8 shrink-0 text-muted" aria-hidden="true" />
-          <div class="min-w-0"><h3 class="break-words text-xl font-bold text-highlighted">{{ exerciseName(exercise.exercise_id) }}</h3><p class="mt-1 text-base text-muted"><GroupedSetSummary :sets="exercise.sets" /></p></div>
-        </li>
-      </ul>
+      <h2 id="detail-exercises" class="mb-3 text-xl font-bold text-highlighted">Упражнения</h2>
+      <div class="rounded-[18px] border border-accented bg-default px-4 shadow-sm">
+        <p class="pt-2 text-xs font-medium text-toned">Подходы × повторы · вес</p>
+        <ul class="divide-y divide-default">
+          <li v-for="exercise in program.exercises" :key="exercise.position" class="py-2">
+            <h3 class="mb-0.5 break-words text-base font-medium leading-5 text-highlighted">{{ exerciseName(exercise.exercise_id) }}</h3>
+            <GroupedSetSummary :sets="exercise.sets" prominent />
+          </li>
+        </ul>
+      </div>
     </section>
     <UButton label="Начать тренировку" block size="xl" class="mt-10" :loading="startPending" :disabled="startPending || deletePending" @click="$emit('start')" />
     <div class="mt-8 border-t border-muted pt-6"><UButton label="Удалить тренировку" icon="i-lucide-trash-2" color="error" variant="outline" block size="xl" @click="deleteOpen = true" /></div>
