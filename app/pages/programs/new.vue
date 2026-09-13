@@ -33,7 +33,7 @@ async function submit() {
     const program = await programsState.create(result.value)
     draftState.reset()
     toast.add({ title: 'Тренировка создана', color: 'success' })
-    await navigateTo(`/programs/${program.id}`)
+    await navigateTo(`/programs/${program.id}`, { replace: true })
   }
   catch (cause) {
     const error = cause as ApiError

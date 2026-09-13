@@ -156,47 +156,52 @@ test('create form exposes accessible weekday and set controls', async ({ page })
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false)
 })
 
-test('create sends ordered sets without positions', async ({ page }) => {
-  let submittedBody: Record<string, unknown> | undefined
-  await page.route('**/api/api-tren/training-programs', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback()
-      return
-    }
-    submittedBody = route.request().postDataJSON() as Record<string, unknown>
-    await route.fulfill({ json: { data: { id: 3, ...submittedBody } } })
+for (const origin of ['/', '/programs', '/programs/new']) {
+  test(`create sends ordered sets and preserves Back navigation from ${origin}`, async ({ page }) => {
+    let submittedBody: Record<string, unknown> | undefined
+    await page.route('**/api/api-tren/training-programs', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback()
+        return
+      }
+      submittedBody = route.request().postDataJSON() as Record<string, unknown>
+      await route.fulfill({ json: { data: { id: 3, ...submittedBody } } })
+    })
+
+    await page.goto(origin)
+    if (origin !== '/programs/new') await page.locator('a[href="/programs/new"]').click()
+    const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
+    const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
+    const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+    await page.getByRole('button', { name: weekdayLabels[available] }).click()
+    await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+    await selectExercise(page, 'Жим лёжа')
+    await page.getByLabel('Повторы').fill('6')
+    await page.getByLabel('Вес, кг').fill('90,5')
+    await page.getByRole('button', { name: 'Добавить подход' }).click()
+    await page.getByRole('button', { name: 'Создать тренировку' }).click()
+    await expect(page).toHaveURL(/\/programs\/3$/)
+
+    expect(submittedBody).toEqual({
+      weekday: available,
+      name: 'Тренировка',
+      exercises: [{
+        exercise_id: 10,
+        sets: [
+          { repetitions: 6, working_weight_kg: 90.5 },
+          { repetitions: 6, working_weight_kg: 90.5 },
+        ],
+      }],
+    })
+
+    await page.getByRole('button', { name: 'Назад' }).click()
+    await expect(page).toHaveURL(origin === '/programs/new' ? '/programs' : origin)
+    await page.locator('a[href="/programs/new"]').click()
+    await expect(page).toHaveURL('/programs/new')
+    await expect(page.getByLabel('Название')).toHaveValue('Тренировка')
+    await expect(page.getByRole('button', { name: 'Упражнение', exact: true })).toHaveCount(0)
   })
-
-  await page.goto('/programs/new')
-  const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
-  const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
-  const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-  await page.getByRole('button', { name: weekdayLabels[available] }).click()
-  await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await selectExercise(page, 'Жим лёжа')
-  await page.getByLabel('Повторы').fill('6')
-  await page.getByLabel('Вес, кг').fill('90,5')
-  await page.getByRole('button', { name: 'Добавить подход' }).click()
-  await page.getByRole('button', { name: 'Создать тренировку' }).click()
-  await expect(page).toHaveURL(/\/programs\/3$/)
-
-  expect(submittedBody).toEqual({
-    weekday: available,
-    name: 'Тренировка',
-    exercises: [{
-      exercise_id: 10,
-      sets: [
-        { repetitions: 6, working_weight_kg: 90.5 },
-        { repetitions: 6, working_weight_kg: 90.5 },
-      ],
-    }],
-  })
-
-  await page.getByRole('button', { name: 'Назад' }).click()
-  await expect(page).toHaveURL(/\/programs\/new$/)
-  await expect(page.getByLabel('Название')).toHaveValue('Тренировка')
-  await expect(page.getByRole('button', { name: 'Упражнение', exact: true })).toHaveCount(0)
-})
+}
 
 test('exercises can be reordered with the drag handle', async ({ page }) => {
   await page.goto('/programs/new')
