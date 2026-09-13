@@ -33,6 +33,7 @@ test.beforeEach(async ({ page }) => {
       },
     }
   })
+  await page.route('**/api/api-tren/workout-sessions/active', route => route.fulfill({ json: { data: null } }))
   await page.route('**/api/auth', route => route.fulfill({ json: { authenticated: true } }))
   await page.route('**/api/api-tren/exercises', route => route.fulfill({ json: { data: [
     { id: 10, name: 'Жим лёжа' }, { id: 20, name: 'Тяга верхнего блока' },
@@ -80,12 +81,12 @@ test('home refreshes the greeting immediately when the app becomes visible', asy
   await expect(page.getByText('Понедельник, 14 сентября')).toBeVisible()
 })
 
-test('home shows today workout without estimated duration and only two tabs', async ({ page }) => {
+test('home shows today workout without estimated duration and three navigation tabs', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Сегодня тренировка' })).toBeVisible()
   await expect(page.getByText('Грудь и трицепс')).toBeVisible()
   await expect(page.getByText('~45 минут')).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Основная навигация' }).getByRole('link')).toHaveCount(2)
+  await expect(page.getByRole('navigation', { name: 'Основная навигация' }).getByRole('link')).toHaveCount(3)
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
   expect(overflow).toBe(false)
@@ -475,6 +476,7 @@ test('workout start 404 closes the stale program', async ({ page }) => {
 
   await page.goto('/programs/1')
   await page.getByRole('button', { name: 'Начать тренировку' }).click()
+  await page.getByRole('button', { name: 'Подтвердить и начать' }).click()
   await expect(page).toHaveURL(/\/programs$/)
   await expect(page.getByRole('heading', { name: 'Программа' })).toBeVisible()
 })

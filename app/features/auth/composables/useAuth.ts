@@ -1,5 +1,5 @@
 import { createAuthCoordinator } from '../model/auth'
-import { normalizeApiError } from '~/features/training-programs/model/errors'
+import { normalizeApiError } from '~/utils/api-error'
 import { logger } from '~/utils/logger'
 import { useTelegram } from './useTelegram'
 

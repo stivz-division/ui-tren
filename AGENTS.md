@@ -4,7 +4,7 @@
 
 ## Обзор проекта
 
-UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Реализованы недельное расписание, CRUD тренировочных программ, Telegram auth через same-origin BFF и запуск активной тренировки; полный workflow выполнения сессии остаётся отдельной задачей.
+UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Реализованы недельное расписание, CRUD тренировочных программ, Telegram auth через same-origin BFF, подготовка и полный workflow выполнения тренировки с автосохранением, восстановление активной сессии и история тренировок.
 
 ## Технологический стек
 
@@ -35,9 +35,11 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── composables/useLocalClock.ts   # Клиентское время и timezone устройства с обновлением при resume
 │   ├── features/auth/                # Telegram bootstrap и in-memory auth state
 │   ├── features/training-programs/   # Schedule API, state, forms и screens
-│   ├── features/workout-sessions/    # Start active session и handoff screen
+│   ├── features/workout-sessions/    # Active session, carousel, autosave и complete/cancel
+│   ├── features/workout-history/     # Cursor history и результаты упражнений
+│   ├── utils/api-error.ts            # Общая нормализация transport/domain/validation errors
 │   ├── layouts/default.vue           # Общий AppShell
-│   └── pages/                        # Тонкие routes /, /programs*, /workout-session
+│   └── pages/                        # Тонкие routes /, /programs*, /workout-session*, /workout-history
 ├── server/
 │   ├── api/auth.post.ts              # Telegram initData -> HttpOnly session cookie
 │   ├── api/api-tren/[...path].ts     # Allowlisted authenticated Laravel proxy
@@ -80,6 +82,8 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `app/app.vue` | Корневой Nuxt UI provider |
 | `app/pages/index.vue` | Главная с тренировкой сегодня или rest day |
 | `app/pages/programs/` | Список, создание, просмотр и редактирование программ |
+| `app/pages/workout-session/` | Подготовка программы и выполнение активной сессии |
+| `app/pages/workout-history.vue` | История с курсорной пагинацией и результатами |
 | `server/api/auth.post.ts` | BFF auth и server-only local-подмена `TELEGRAM_INIT_DATA` |
 | `server/api/api-tren/[...path].ts` | Узкий allowlisted proxy к Laravel API |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |

@@ -3,6 +3,7 @@ const route = useRoute()
 const items = [
   { label: 'Главная', icon: 'i-lucide-house', to: '/' },
   { label: 'Программа', icon: 'i-lucide-clipboard-list', to: '/programs' },
+  { label: 'История', icon: 'i-lucide-history', to: '/workout-history' },
 ]
 </script>
 
@@ -11,7 +12,7 @@ const items = [
     aria-label="Основная навигация"
     class="fixed inset-x-0 bottom-0 z-40 border-t border-muted bg-default/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm"
   >
-    <div class="mx-auto grid h-20 max-w-[480px] grid-cols-2 px-5">
+    <div class="mx-auto grid h-20 max-w-[480px] grid-cols-3 px-5">
       <NuxtLink
         v-for="item in items"
         :key="item.to"

@@ -5,7 +5,7 @@ import { formatDate, getGreeting, getWeekday } from '~/utils/date'
 import { useExerciseCatalog } from '../composables/useExerciseCatalog'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import { buildHomeState } from '../model/home'
-import { useActiveWorkoutSession } from '~/features/workout-sessions/composables/useActiveWorkoutSession'
+import { ActiveWorkoutBanner } from '~/features/workout-sessions'
 import RestDayCard from './RestDayCard.vue'
 import TodayWorkoutCard from './TodayWorkoutCard.vue'
 import UpcomingProgramCard from './UpcomingProgramCard.vue'
@@ -13,8 +13,6 @@ import UpcomingProgramCard from './UpcomingProgramCard.vue'
 const { firstName, status: authStatus } = useAuth()
 const { programs, status, error, load } = useTrainingPrograms()
 const catalog = useExerciseCatalog()
-const activeWorkout = useActiveWorkoutSession()
-const toast = useToast()
 const clock = useLocalClock()
 const home = computed(() => clock.value
   ? buildHomeState(getWeekday(clock.value.now, clock.value.timeZone), programs.value)
@@ -31,9 +29,8 @@ watch(authStatus, (value) => {
   if (value === 'authenticated') void Promise.all([load(), catalog.load()])
 }, { immediate: true })
 
-async function startTodayWorkout(programId: number) {
-  try { await activeWorkout.start(programId); await navigateTo('/workout-session') }
-  catch (cause) { toast.add({ title: (cause as { message: string }).message, color: 'error' }) }
+function startTodayWorkout(programId: number) {
+  return navigateTo({ path: '/workout-session/prepare', query: { programId } })
 }
 </script>
 
@@ -42,6 +39,7 @@ async function startTodayWorkout(programId: number) {
     <ScreenHeader :title="greeting" :subtitle="dateLabel">
       <template #actions><UButton to="/programs/new" label="Создать" icon="i-lucide-plus" color="neutral" variant="ghost" size="lg" class="min-h-11" /></template>
     </ScreenHeader>
+    <ActiveWorkoutBanner />
     <div v-if="status === 'pending' || status === 'idle'" class="space-y-6" aria-label="Загрузка расписания">
       <USkeleton class="h-72 rounded-[18px]" /><USkeleton class="h-28 rounded-[18px]" />
     </div>
@@ -49,7 +47,7 @@ async function startTodayWorkout(programId: number) {
       <template #actions><UButton label="Повторить" color="error" variant="soft" size="lg" class="min-h-11" @click="load(true)" /></template>
     </UAlert>
     <div v-else-if="home" class="space-y-10">
-      <TodayWorkoutCard v-if="home.kind === 'workout'" :program="home.today" :pending="activeWorkout.pending.value" @start="startTodayWorkout(home.today.id)" />
+      <TodayWorkoutCard v-if="home.kind === 'workout'" :program="home.today" :pending="false" @start="startTodayWorkout(home.today.id)" />
       <RestDayCard v-else />
       <UpcomingProgramCard v-if="home.next" :program="home.next.program" :days-until="home.next.daysUntil" :catalog="catalog.exercises.value" :detailed="home.kind === 'rest'" />
     </div>

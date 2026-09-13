@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-const hasBottomNavigation = computed(() => route.path === '/' || route.path === '/programs')
+const hasBottomNavigation = computed(() => route.path === '/' || route.path === '/programs' || route.path === '/workout-history')
 </script>
 
 <template>

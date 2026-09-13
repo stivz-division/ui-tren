@@ -1,6 +1,6 @@
 import { useAuth } from '~/features/auth/composables/useAuth'
 import { createAuthorizedRequest } from '~/features/auth/model/auth'
-import { normalizeApiError } from '~/features/training-programs/model/errors'
+import { normalizeApiError } from '~/utils/api-error'
 import { logger } from '~/utils/logger'
 
 export interface ApiRequestOptions {

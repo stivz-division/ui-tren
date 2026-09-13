@@ -3,31 +3,16 @@ import { useAuth } from '~/features/auth/composables/useAuth'
 import ProgramDetail from '~/features/training-programs/components/ProgramDetail.vue'
 import { useExerciseCatalog } from '~/features/training-programs/composables/useExerciseCatalog'
 import { useTrainingPrograms } from '~/features/training-programs/composables/useTrainingPrograms'
-import type { ApiError } from '~/features/training-programs/model/errors'
-import { useActiveWorkoutSession } from '~/features/workout-sessions/composables/useActiveWorkoutSession'
 
 const route = useRoute(); const id = Number(route.params.id); const toast = useToast()
-const programs = useTrainingPrograms(); const catalog = useExerciseCatalog(); const active = useActiveWorkoutSession()
+const programs = useTrainingPrograms(); const catalog = useExerciseCatalog()
 const program = computed(() => programs.findById(id))
 const { status: authStatus } = useAuth()
 watch(authStatus, (value) => {
   if (value === 'authenticated') void Promise.all([programs.load(), catalog.load()])
 }, { immediate: true })
-async function start() {
-  try {
-    await active.start(id)
-    await navigateTo('/workout-session')
-  }
-  catch (cause) {
-    const error = cause as ApiError
-    if (error.status === 404) {
-      await programs.load(true, true)
-      toast.add({ title: 'Программа не найдена', color: 'warning' })
-      await navigateTo('/programs', { replace: true })
-      return
-    }
-    toast.add({ title: error.message, color: 'error' })
-  }
+function start() {
+  return navigateTo({ path: '/workout-session/prepare', query: { programId: id } })
 }
 async function remove() { try { await programs.remove(id); toast.add({ title: 'Тренировка удалена', color: 'success' }); await navigateTo('/programs', { replace: true }) } catch (cause) { toast.add({ title: (cause as { message: string }).message, color: 'error' }) } }
 </script>
@@ -56,7 +41,7 @@ async function remove() { try { await programs.remove(id); toast.add({ title: '�
     v-else
     :program="program"
     :catalog="catalog.exercises.value"
-    :start-pending="active.pending.value"
+    :start-pending="false"
     :delete-pending="programs.mutationPending.value"
     @start="start"
     @delete="remove"

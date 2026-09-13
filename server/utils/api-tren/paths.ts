@@ -9,6 +9,10 @@ const RULES: Array<{ methods: string[], pattern: RegExp }> = [
   { methods: ['GET'], pattern: /^training-programs\/weekdays\/[1-7]$/ },
   { methods: ['GET'], pattern: /^exercises$/ },
   { methods: ['GET', 'PUT'], pattern: /^workout-sessions\/active$/ },
+  { methods: ['GET'], pattern: /^workout-sessions$/ },
+  { methods: ['PUT'], pattern: /^workout-sessions\/[1-9]\d*\/exercises\/[1-9]\d*\/sets$/ },
+  { methods: ['POST'], pattern: /^workout-sessions\/[1-9]\d*\/exercises\/[1-9]\d*\/(complete|skip|reopen)$/ },
+  { methods: ['POST'], pattern: /^workout-sessions\/[1-9]\d*\/(complete|cancel)$/ },
 ]
 
 export function isAllowedApiRequest(method: string, path: string): boolean {

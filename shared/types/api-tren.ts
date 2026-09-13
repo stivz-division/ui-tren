@@ -78,6 +78,12 @@ export interface AuthResponse {
   token_type: 'Bearer'
 }
 
+export interface WorkoutHistoryPage {
+  data: WorkoutSession[]
+  links: { prev: string | null, next: string | null }
+  meta: { per_page: number, prev_cursor: string | null, next_cursor: string | null }
+}
+
 export interface DomainErrorResponse {
   code: string
   message: string

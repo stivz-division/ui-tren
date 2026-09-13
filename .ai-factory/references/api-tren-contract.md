@@ -3,7 +3,7 @@
 > Источники: https://github.com/stivz-division/api-tren, https://core.telegram.org/bots/webapps
 > Создано: 2026-09-13
 > Обновлено: 2026-09-13
-> Проверенная ветка backend: `master`, состояние GitHub на 2026-09-12
+> Workout endpoints и schemas повторно сверены с локальным `api-tren/openapi.json` 2026-09-13; поведение skip/reopen и ограничения веса — с backend source. Остальной контракт: `master`, состояние GitHub на 2026-09-12.
 
 ## Обзор
 
@@ -307,3 +307,11 @@ interface WorkoutSessionHistoryPage {
 
 - Backend repository: https://github.com/stivz-division/api-tren
 - Telegram Mini Apps: https://core.telegram.org/bots/webapps
+
+## Реализация UI выполнения (2026-09-13)
+
+- «Начать тренировку» открывает `/workout-session/prepare?programId=…`; модальный редактор сохраняет всю программу через PUT training-programs/{id}. PUT workout-sessions/active вызывается только после подтверждения.
+- Active session читается после авторизации при открытии главной/экрана выполнения и при resume. Выполнение использует фактический `sets`, в том числе пустой массив, без подстановки `planned_sets`.
+- Каждый валидный ввод ставит snapshot подходов в последовательную очередь. Черновики сохраняются только в памяти. Ошибка останавливает очередь; UI сохраняет черновики и предлагает явно перечитать состояние и повторить сохранение.
+- complete exercise отправляет `sets`; skip/reopen и complete/cancel session используют POST. Отмена требует подтверждения. Завершение разрешено после complete/skip всех упражнений.
+- История использует `meta.next_cursor` из GET workout-sessions, отображает completed/cancelled и фактические результаты. URL из `links` не используется для запросов.
