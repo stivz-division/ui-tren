@@ -1,7 +1,5 @@
 import type { Weekday } from '#shared/types/api-tren'
 
-export const APP_TIME_ZONE = 'Europe/Moscow'
-
 const WEEKDAY_BY_SHORT_NAME: Record<string, Weekday> = {
   Mon: 1,
   Tue: 2,
@@ -12,18 +10,18 @@ const WEEKDAY_BY_SHORT_NAME: Record<string, Weekday> = {
   Sun: 7,
 }
 
-export function getMoscowWeekday(date: Date): Weekday {
+export function getWeekday(date: Date, timeZone: string): Weekday {
   const shortName = new Intl.DateTimeFormat('en-US', {
-    timeZone: APP_TIME_ZONE,
+    timeZone,
     weekday: 'short',
   }).format(date)
 
   return WEEKDAY_BY_SHORT_NAME[shortName] ?? 1
 }
 
-export function formatMoscowDate(date: Date): string {
+export function formatDate(date: Date, timeZone: string): string {
   const value = new Intl.DateTimeFormat('ru-RU', {
-    timeZone: APP_TIME_ZONE,
+    timeZone,
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -32,9 +30,9 @@ export function formatMoscowDate(date: Date): string {
   return value.charAt(0).toLocaleUpperCase('ru-RU') + value.slice(1)
 }
 
-export function getMoscowGreeting(date: Date): string {
+export function getGreeting(date: Date, timeZone: string): string {
   const hour = Number(new Intl.DateTimeFormat('en-US', {
-    timeZone: APP_TIME_ZONE,
+    timeZone,
     hour: 'numeric',
     hourCycle: 'h23',
   }).format(date))

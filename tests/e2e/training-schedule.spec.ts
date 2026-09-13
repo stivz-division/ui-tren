@@ -6,13 +6,14 @@ async function selectExercise(page: Page, name: string, index = 0) {
   await expect(page.getByRole('option')).toHaveCount(0)
 }
 
-function currentMoscowWeekday(): number {
-  const short = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Moscow', weekday: 'short' }).format(new Date())
-  return { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 }[short] ?? 1
-}
+const fixtureWeekday = 7
+const fixtureTime = new Date('2026-09-13T13:00:00Z')
+
+test.use({ timezoneId: 'Asia/Bangkok' })
 
 test.beforeEach(async ({ page }) => {
-  const weekday = currentMoscowWeekday()
+  await page.clock.install({ time: fixtureTime })
+  const weekday = fixtureWeekday
   const nextWeekday = weekday === 7 ? 1 : weekday + 1
   await page.addInitScript(() => {
     const testWindow = window as typeof window & { __telegramBackHandler?: () => void }
@@ -46,6 +47,37 @@ test.beforeEach(async ({ page }) => {
     }
     await route.continue()
   })
+})
+
+test('home greets the user by Bangkok time without hydration errors', async ({ page }) => {
+  const hydrationErrors: string[] = []
+  page.on('console', message => {
+    if (/hydration/i.test(message.text())) hydrationErrors.push(message.text())
+  })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Добрый вечер, Алексей')
+  await expect(page.getByText('Воскресенье, 13 сентября')).toBeVisible()
+  expect(hydrationErrors).toEqual([])
+})
+
+test('home updates the local date and today workout across midnight', async ({ page }) => {
+  await page.clock.setSystemTime(new Date('2026-09-13T16:59:30Z'))
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Сегодня тренировка' })).toBeVisible()
+  await expect(page.getByText('Воскресенье, 13 сентября')).toBeVisible()
+  await page.clock.runFor(60_000)
+  await expect(page.getByText('Понедельник, 14 сентября')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Сегодня тренировка' })).toContainText('Спина и бицепс с длинным названием')
+  await expect(page.getByRole('region', { name: 'Следующая тренировка' })).toContainText('Грудь и трицепс')
+})
+
+test('home refreshes the greeting immediately when the app becomes visible', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Добрый вечер, Алексей')
+  await page.clock.setSystemTime(new Date('2026-09-13T23:00:00Z'))
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Доброе утро, Алексей')
+  await expect(page.getByText('Понедельник, 14 сентября')).toBeVisible()
 })
 
 test('home shows today workout without estimated duration and only two tabs', async ({ page }) => {
@@ -104,7 +136,7 @@ test('a protected 401 triggers one reauthentication and one retry', async ({ pag
 test('program list is sorted and renders grouped adjacent sets', async ({ page }) => {
   await page.goto('/programs')
   const cards = page.locator('main').getByRole('link').filter({ has: page.locator('h2') })
-  const weekday = currentMoscowWeekday()
+  const weekday = fixtureWeekday
   const nextWeekday = weekday === 7 ? 1 : weekday + 1
   await expect(cards.first()).toContainText(weekday < nextWeekday ? 'Грудь и трицепс' : 'Спина и бицепс')
   await expect(cards.filter({ hasText: 'Грудь и трицепс' })).toContainText('2×6 100 кг, 1×3 140 кг')
@@ -136,7 +168,7 @@ test('create sends ordered sets without positions', async ({ page }) => {
   })
 
   await page.goto('/programs/new')
-  const occupied = [currentMoscowWeekday(), currentMoscowWeekday() === 7 ? 1 : currentMoscowWeekday() + 1]
+  const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
   const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
@@ -203,7 +235,7 @@ test('Telegram Back confirms discard and clears the create draft', async ({ page
 })
 
 test('home shows the rest state and the next program', async ({ page }) => {
-  const nextWeekday = currentMoscowWeekday() === 7 ? 1 : currentMoscowWeekday() + 1
+  const nextWeekday = fixtureWeekday === 7 ? 1 : fixtureWeekday + 1
   await page.unroute('**/api/api-tren/training-programs')
   await page.route('**/api/api-tren/training-programs', route => route.fulfill({ json: { data: [
     { id: 2, weekday: nextWeekday, name: 'Спина и бицепс', exercises: [{ exercise_id: 20, position: 1, sets: [{ position: 1, repetitions: 10, working_weight_kg: 60 }] }] },
@@ -267,7 +299,7 @@ test('server validation keeps the draft and focuses its first field error', asyn
   })
 
   await page.goto('/programs/new')
-  const occupied = [currentMoscowWeekday(), currentMoscowWeekday() === 7 ? 1 : currentMoscowWeekday() + 1]
+  const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
   const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
@@ -294,7 +326,7 @@ test('occupied weekday conflict refreshes days and focuses the selector', async 
   })
 
   await page.goto('/programs/new')
-  const occupied = [currentMoscowWeekday(), currentMoscowWeekday() === 7 ? 1 : currentMoscowWeekday() + 1]
+  const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
   const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
@@ -331,7 +363,7 @@ test('catalog failure has an explicit retry path', async ({ page }) => {
 
 test('set validation errors are associated with their inputs', async ({ page }) => {
   await page.goto('/programs/new')
-  const occupied = [currentMoscowWeekday(), currentMoscowWeekday() === 7 ? 1 : currentMoscowWeekday() + 1]
+  const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
   const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
@@ -386,7 +418,7 @@ test('edit replaces name and exercises without weekday', async ({ page }) => {
     submittedBody = route.request().postDataJSON() as Record<string, unknown>
     await route.fulfill({ json: { data: {
       id: 1,
-      weekday: currentMoscowWeekday(),
+      weekday: fixtureWeekday,
       ...submittedBody,
     } } })
   })
@@ -482,7 +514,7 @@ test('delete is cancelled by No and sent exactly once after confirmation', async
   })
   await page.unroute('**/api/api-tren/training-programs')
   await page.route('**/api/api-tren/training-programs', route => route.fulfill({ json: { data: deleteRequests === 0 ? [
-    { id: 1, weekday: currentMoscowWeekday(), name: 'Грудь и трицепс', exercises: [{ exercise_id: 10, position: 1, sets: [{ position: 1, repetitions: 6, working_weight_kg: 100 }] }] },
+    { id: 1, weekday: fixtureWeekday, name: 'Грудь и трицепс', exercises: [{ exercise_id: 10, position: 1, sets: [{ position: 1, repetitions: 6, working_weight_kg: 100 }] }] },
   ] : [] } }))
 
   await page.goto('/programs/1')
@@ -520,7 +552,7 @@ test('delete can be retried after a mutation conflict', async ({ page }) => {
   await page.route('**/api/api-tren/training-programs', async (route) => {
     if (deleteRequests === 1) await reconciliationGate
     await route.fulfill({ json: { data: deleteRequests < 2 ? [
-      { id: 1, weekday: currentMoscowWeekday(), name: 'Грудь и трицепс', exercises: [{ exercise_id: 10, position: 1, sets: [{ position: 1, repetitions: 6, working_weight_kg: 100 }] }] },
+      { id: 1, weekday: fixtureWeekday, name: 'Грудь и трицепс', exercises: [{ exercise_id: 10, position: 1, sets: [{ position: 1, repetitions: 6, working_weight_kg: 100 }] }] },
     ] : [] } })
   })
 
@@ -616,7 +648,7 @@ test('repetitions copy without weight and empty weights save as zero', async ({ 
   let submittedBody: Record<string, unknown> | undefined
   await page.route('**/api/api-tren/training-programs/1', async (route) => {
     submittedBody = route.request().postDataJSON() as Record<string, unknown>
-    await route.fulfill({ json: { data: { id: 1, weekday: currentMoscowWeekday(), ...submittedBody } } })
+    await route.fulfill({ json: { data: { id: 1, weekday: fixtureWeekday, ...submittedBody } } })
   })
   await page.goto('/programs/1/edit')
   const weights = page.getByLabel('Вес, кг')

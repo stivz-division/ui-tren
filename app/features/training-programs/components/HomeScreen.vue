@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuth } from '~/features/auth/composables/useAuth'
-import { formatMoscowDate, getMoscowGreeting, getMoscowWeekday } from '~/utils/date'
+import { useLocalClock } from '~/composables/useLocalClock'
+import { formatDate, getGreeting, getWeekday } from '~/utils/date'
 import { useExerciseCatalog } from '../composables/useExerciseCatalog'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import { buildHomeState } from '../model/home'
@@ -14,10 +15,15 @@ const { programs, status, error, load } = useTrainingPrograms()
 const catalog = useExerciseCatalog()
 const activeWorkout = useActiveWorkoutSession()
 const toast = useToast()
-const now = new Date()
-const home = computed(() => buildHomeState(getMoscowWeekday(now), programs.value))
+const clock = useLocalClock()
+const home = computed(() => clock.value
+  ? buildHomeState(getWeekday(clock.value.now, clock.value.timeZone), programs.value)
+  : null)
+const dateLabel = computed(() => clock.value
+  ? formatDate(clock.value.now, clock.value.timeZone)
+  : undefined)
 const greeting = computed(() => {
-  const value = getMoscowGreeting(now)
+  const value = clock.value ? getGreeting(clock.value.now, clock.value.timeZone) : 'Здравствуйте'
   return firstName.value ? `${value}, ${firstName.value}` : value
 })
 
@@ -33,7 +39,7 @@ async function startTodayWorkout(programId: number) {
 
 <template>
   <div>
-    <ScreenHeader :title="greeting" :subtitle="formatMoscowDate(now)">
+    <ScreenHeader :title="greeting" :subtitle="dateLabel">
       <template #actions><UButton to="/programs/new" label="Создать" icon="i-lucide-plus" color="neutral" variant="ghost" size="lg" class="min-h-11" /></template>
     </ScreenHeader>
     <div v-if="status === 'pending' || status === 'idle'" class="space-y-6" aria-label="Загрузка расписания">
@@ -42,7 +48,7 @@ async function startTodayWorkout(programId: number) {
     <UAlert v-else-if="status === 'error'" color="error" icon="i-lucide-circle-alert" title="Не удалось загрузить расписание" :description="error?.message">
       <template #actions><UButton label="Повторить" color="error" variant="soft" size="lg" class="min-h-11" @click="load(true)" /></template>
     </UAlert>
-    <div v-else class="space-y-10">
+    <div v-else-if="home" class="space-y-10">
       <TodayWorkoutCard v-if="home.kind === 'workout'" :program="home.today" :pending="activeWorkout.pending.value" @start="startTodayWorkout(home.today.id)" />
       <RestDayCard v-else />
       <UpcomingProgramCard v-if="home.next" :program="home.next.program" :days-until="home.next.daysUntil" :catalog="catalog.exercises.value" :detailed="home.kind === 'rest'" />

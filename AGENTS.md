@@ -32,6 +32,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── app.vue                       # UApp и auth gate
 │   ├── assets/css/main.css           # Tailwind CSS и Nuxt UI styles
 │   ├── components/ui/                # Shell, header, back и bottom navigation
+│   ├── composables/useLocalClock.ts   # Клиентское время и timezone устройства с обновлением при resume
 │   ├── features/auth/                # Telegram bootstrap и in-memory auth state
 │   ├── features/training-programs/   # Schedule API, state, forms и screens
 │   ├── features/workout-sessions/    # Start active session и handoff screen
