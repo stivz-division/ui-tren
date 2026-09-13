@@ -58,17 +58,53 @@ describe('program draft', () => {
     expect(exercise.sets).toHaveLength(2)
   })
 
-  it('keeps a copied set empty when the previous set is incomplete', () => {
+  it.each([
+    { repetitions: '8', workingWeightKg: '' },
+    { repetitions: '', workingWeightKg: '20' },
+    { repetitions: '8', workingWeightKg: '0' },
+    { repetitions: '', workingWeightKg: '' },
+  ])('copies each previous set field independently: %j', (values) => {
     const exercise = {
       key: 'exercise-10',
       exerciseId: 10,
-      sets: [{ key: 'set-1', repetitions: '', workingWeightKg: '20' }],
+      sets: [{ key: 'set-1', ...values }],
     }
 
     expect(appendSet(exercise, 'set-2').sets.at(-1)).toEqual({
       key: 'set-2',
-      repetitions: '',
-      workingWeightKg: '',
+      ...values,
+    })
+  })
+
+  it.each([
+    ['create', toCreateProgramInput],
+    ['update', toUpdateProgramInput],
+  ] as const)('sends empty weights as zero on %s', (_, mapInput) => {
+    const draft = populatedDraft()
+    draft.exercises[0]!.sets[0]!.workingWeightKg = ''
+    draft.exercises[0]!.sets[1]!.workingWeightKg = '   '
+
+    expect(mapInput(draft)).toMatchObject({
+      ok: true,
+      value: {
+        exercises: [{
+          exercise_id: 10,
+          sets: [
+            { repetitions: 6, working_weight_kg: 0 },
+            { repetitions: 3, working_weight_kg: 0 },
+          ],
+        }],
+      },
+    })
+    expect(draft.exercises[0]!.sets[0]!.workingWeightKg).toBe('')
+  })
+
+  it.each(['-1', 'abc', '1.234', '1000000001'])('rejects invalid nonempty weight %s', (weight) => {
+    const draft = populatedDraft()
+    draft.exercises[0]!.sets[0]!.workingWeightKg = weight
+    expect(toCreateProgramInput(draft)).toMatchObject({
+      ok: false,
+      errors: { 'exercises.0.sets.0.working_weight_kg': expect.any(String) },
     })
   })
 

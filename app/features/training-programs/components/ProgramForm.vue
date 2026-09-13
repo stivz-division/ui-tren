@@ -9,18 +9,48 @@ const props = defineProps<{ mode: 'create' | 'edit', occupiedWeekdays: Weekday[]
 defineEmits<{ submit: [], retryCatalog: [] }>()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 const reorderAnnouncement = shallowRef('')
+let moveSequence = 0
 
 function removeExercise(index: number) { model.value = { ...model.value, exercises: model.value.exercises.filter((_, itemIndex) => itemIndex !== index) } }
-function move(index: number, target: number) {
-  if (index === target) return
+async function move(index: number, target: number) {
+  if (index === target || target < 0 || target >= model.value.exercises.length) return
   const exercise = model.value.exercises[index]
   if (!exercise) return
+  const sequence = ++moveSequence
+  const focusedElement = document.activeElement
   model.value = { ...model.value, exercises: moveExercise(model.value.exercises, index, target) }
   const name = props.catalog.find(item => item.id === exercise.exerciseId)?.name
     ?? (exercise.exerciseId ? `Упражнение №${exercise.exerciseId}` : 'Упражнение')
   reorderAnnouncement.value = `Упражнение «${name}» перемещено на позицию ${target + 1}`
+  await nextTick()
+  const card = formElement.value?.querySelector<HTMLElement>(`[data-exercise-key="${exercise.key}"]`)
+  if (!card || sequence !== moveSequence) return
+  const focusTarget = focusedElement instanceof HTMLElement
+    && card.contains(focusedElement)
+    && !focusedElement.matches(':disabled, [aria-disabled="true"]')
+    ? focusedElement
+    : card
+  focusTarget.focus({ preventScroll: true })
+
+  // Wait for the card's transform to finish so scrolling uses its new position.
+  await Promise.allSettled(card.getAnimations().map(animation => animation.finished))
+  if (sequence !== moveSequence || !card.isConnected || !card.contains(document.activeElement)) return
+  card.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    block: 'start',
+  })
 }
-function addExercise() { model.value = { ...model.value, exercises: [...model.value.exercises, createEmptyExerciseDraft()] } }
+async function addExercise() {
+  const exercise = createEmptyExerciseDraft()
+  model.value = { ...model.value, exercises: [...model.value.exercises, exercise] }
+  await nextTick()
+  const card = formElement.value?.querySelector<HTMLElement>(`[data-exercise-key="${exercise.key}"]`)
+  card?.querySelector<HTMLElement>('[data-exercise-picker]')?.focus({ preventScroll: true })
+  card?.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    block: 'start',
+  })
+}
 const draggedExerciseIndex = shallowRef<number | null>(null)
 
 function startDrag(index: number, event: DragEvent) {
@@ -64,11 +94,23 @@ watch(() => props.errors, async (errors) => {
       </UAlert>
       <p v-if="errors.exercises" class="mb-3 text-sm text-error" role="alert" tabindex="-1" data-error-focus>{{ errors.exercises }}</p>
       <p class="sr-only" aria-live="polite">{{ reorderAnnouncement }}</p>
-      <div class="space-y-4">
+      <TransitionGroup name="exercise" tag="div" class="relative flex flex-col gap-4">
         <PlannedExerciseEditor v-for="(exercise, index) in model.exercises" :key="exercise.key" v-model="model.exercises[index]!" :index="index" :catalog="catalog" :excluded-ids="model.exercises.map(item => item.exerciseId).filter((id): id is number => id !== null)" :errors="errors" :can-move-up="index > 0" :can-move-down="index < model.exercises.length - 1" @remove="removeExercise(index)" @move-up="move(index, index - 1)" @move-down="move(index, index + 1)" @drag-start="startDrag(index, $event)" @drag-end="finishDrag" @drop="dropExercise(index, $event)" />
-      </div>
+      </TransitionGroup>
       <UButton label="Добавить упражнение" icon="i-lucide-plus" color="neutral" variant="outline" block size="xl" class="mt-4" :disabled="catalogUnavailable || catalog.length === 0" @click="addExercise" />
     </section>
     <UButton type="submit" :label="mode === 'create' ? 'Создать тренировку' : 'Сохранить изменения'" block size="xl" :loading="pending" :disabled="pending" />
   </form>
 </template>
+
+<style scoped>
+.exercise-move {
+  transition: transform 250ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-move {
+    transition: none;
+  }
+}
+</style>

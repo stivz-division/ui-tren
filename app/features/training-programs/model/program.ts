@@ -64,7 +64,10 @@ export function groupAdjacentSets(sets: readonly PlannedSet[]): SetGroup[] {
 
 export function formatSetSummary(sets: readonly PlannedSet[]): string {
   return groupAdjacentSets(sets)
-    .map(group => `${group.count}×${group.repetitions} ${formatWeight(group.weight)} кг`)
+    .map((group) => {
+      const repetitions = `${group.count}×${group.repetitions}`
+      return group.weight === 0 ? repetitions : `${repetitions} ${formatWeight(group.weight)} кг`
+    })
     .join(', ')
 }
 

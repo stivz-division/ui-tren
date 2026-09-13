@@ -70,11 +70,10 @@ export function appendSet(exercise: ExerciseDraft, key = createDraftKey('set')):
   if (exercise.sets.length >= 100) return exercise
 
   const previous = exercise.sets.at(-1)
-  const canCopy = Boolean(previous?.repetitions && previous.workingWeightKg)
   const nextSet: SetDraft = {
     key,
-    repetitions: canCopy ? previous!.repetitions : '',
-    workingWeightKg: canCopy ? previous!.workingWeightKg : '',
+    repetitions: previous?.repetitions ?? '',
+    workingWeightKg: previous?.workingWeightKg ?? '',
   }
 
   return { ...exercise, sets: [...exercise.sets, nextSet] }
@@ -106,6 +105,7 @@ function parseRepetitions(value: string): number | null {
 }
 
 function parseWeight(value: string): number | null {
+  if (value.trim() === '') return 0
   if (!/^\d+(?:[.,]\d{1,2})?$/.test(value)) return null
   const parsed = Number(value.replace(',', '.'))
   return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1_000_000_000 ? parsed : null

@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { ensureCurrentExerciseOption, findNextProgram, formatExerciseCount, formatSetSummary, sortProgramsByWeekday } from './program'
 
 describe('training program presentation', () => {
+  it('omits zero weights while preserving repetitions and nonzero weights', () => {
+    expect(formatSetSummary([
+      { position: 1, repetitions: 30, working_weight_kg: 0 },
+      { position: 2, repetitions: 12, working_weight_kg: 0 },
+    ])).toBe('1×30, 1×12')
+
+    expect(formatSetSummary([
+      { position: 1, repetitions: 12, working_weight_kg: 0 },
+      { position: 2, repetitions: 12, working_weight_kg: 0 },
+      { position: 3, repetitions: 12, working_weight_kg: 2.5 },
+      { position: 4, repetitions: 12, working_weight_kg: 0 },
+    ])).toBe('2×12, 1×12 2,5 кг, 1×12')
+  })
+
   it('groups only adjacent equal sets', () => {
     expect(formatSetSummary([
       { position: 1, repetitions: 6, working_weight_kg: 100 },

@@ -1,4 +1,10 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+async function selectExercise(page: Page, name: string, index = 0) {
+  await page.getByRole('button', { name: 'Упражнение', exact: true }).nth(index).click()
+  await page.getByRole('option', { name, exact: true }).click()
+  await expect(page.getByRole('option')).toHaveCount(0)
+}
 
 function currentMoscowWeekday(): number {
   const short = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Moscow', weekday: 'short' }).format(new Date())
@@ -109,7 +115,7 @@ test('create form exposes accessible weekday and set controls', async ({ page })
   await page.goto('/programs/new')
   await expect(page.getByRole('heading', { name: 'Новая тренировка' })).toBeVisible()
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
   await page.getByLabel('Повторы').fill('6')
   await page.getByLabel('Вес, кг').fill('90,5')
   await page.getByRole('button', { name: 'Добавить подход' }).click()
@@ -135,7 +141,7 @@ test('create sends ordered sets without positions', async ({ page }) => {
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
   await page.getByLabel('Повторы').fill('6')
   await page.getByLabel('Вес, кг').fill('90,5')
   await page.getByRole('button', { name: 'Добавить подход' }).click()
@@ -157,22 +163,22 @@ test('create sends ordered sets without positions', async ({ page }) => {
   await page.getByRole('button', { name: 'Назад' }).click()
   await expect(page).toHaveURL(/\/programs\/new$/)
   await expect(page.getByLabel('Название')).toHaveValue('Тренировка')
-  await expect(page.getByRole('combobox', { name: 'Упражнение', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Упражнение', exact: true })).toHaveCount(0)
 })
 
 test('exercises can be reordered with the drag handle', async ({ page }) => {
   await page.goto('/programs/new')
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  const selects = page.getByRole('combobox', { name: 'Упражнение', exact: true })
-  await selects.nth(1).selectOption('20')
+  const selects = page.getByRole('button', { name: 'Упражнение', exact: true })
+  await selectExercise(page, 'Тяга верхнего блока', 1)
 
   const dataTransfer = await page.evaluateHandle(() => new DataTransfer())
   await page.getByRole('button', { name: 'Перетащить упражнение 1' }).dispatchEvent('dragstart', { dataTransfer })
   await page.locator('[data-exercise-index="1"]').dispatchEvent('drop', { dataTransfer })
-  await expect(selects.nth(0)).toHaveValue('20')
-  await expect(selects.nth(1)).toHaveValue('10')
+  await expect(selects.nth(0)).toContainText('Тяга верхнего блока')
+  await expect(selects.nth(1)).toContainText('Жим лёжа')
   await expect(page.getByText('Упражнение «Жим лёжа» перемещено на позицию 2')).toHaveAttribute('aria-live', 'polite')
 })
 
@@ -266,7 +272,7 @@ test('server validation keeps the draft and focuses its first field error', asyn
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
   await page.getByLabel('Повторы').fill('6')
   await page.getByLabel('Вес, кг').fill('90')
   await page.getByRole('button', { name: 'Создать тренировку' }).click()
@@ -293,7 +299,7 @@ test('occupied weekday conflict refreshes days and focuses the selector', async 
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
   await page.getByLabel('Повторы').fill('6')
   await page.getByLabel('Вес, кг').fill('90')
   await page.getByRole('button', { name: 'Создать тренировку' }).click()
@@ -330,7 +336,8 @@ test('set validation errors are associated with their inputs', async ({ page }) 
   const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
   await page.getByRole('button', { name: weekdayLabels[available] }).click()
   await page.getByRole('button', { name: 'Добавить упражнение' }).click()
-  await page.getByRole('combobox', { name: 'Упражнение', exact: true }).selectOption('10')
+  await selectExercise(page, 'Жим лёжа')
+  await page.getByLabel('Вес, кг').fill('-1')
   await page.getByRole('button', { name: 'Создать тренировку' }).click()
 
   const repetitions = page.getByLabel('Повторы')
@@ -496,3 +503,134 @@ test('delete can be retried after a mutation conflict', async ({ page }) => {
   await expect(page).toHaveURL(/\/programs$/)
   expect(deleteRequests).toBe(2)
 })
+
+
+test('exercise search filters names, handles empty results and prevents duplicates', async ({ page }) => {
+  await page.goto('/programs/new')
+  await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+  const picker = page.getByRole('button', { name: 'Упражнение', exact: true }).first()
+  await picker.click()
+  const search = page.getByPlaceholder('Поиск упражнения…')
+  await search.fill('Несуществующее')
+  await expect(page.getByText('Упражнения не найдены')).toBeVisible()
+  await search.fill('ЖИМ')
+  await expect(page.getByRole('option', { name: 'Жим лёжа', exact: true })).toBeVisible()
+  await expect(page.getByRole('option', { name: 'Тяга верхнего блока' })).toHaveCount(0)
+  await search.press('ArrowDown')
+  await search.press('Enter')
+  await expect(search).toBeHidden()
+  await expect(picker).toContainText('Жим лёжа')
+  await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+  await page.getByRole('button', { name: 'Упражнение', exact: true }).nth(1).click()
+  await expect(search).toHaveValue('')
+  await expect(page.getByRole('option', { name: 'Жим лёжа', exact: true })).toHaveCount(0)
+  await search.press('Escape')
+  await expect(picker).toContainText('Жим лёжа')
+})
+
+test('reorder buttons keep exercise sets together and respect reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/programs/new')
+  await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+  await selectExercise(page, 'Жим лёжа')
+  await page.getByLabel('Повторы').fill('8')
+  await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+  await selectExercise(page, 'Тяга верхнего блока', 1)
+  await page.getByLabel('Повторы').nth(1).fill('12')
+  await expect(page.getByRole('button', { name: 'Переместить упражнение 1 выше' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Переместить упражнение 2 ниже' })).toBeDisabled()
+  await page.getByRole('button', { name: 'Переместить упражнение 2 выше' }).click()
+  await expect(page.getByRole('button', { name: 'Упражнение', exact: true }).first()).toContainText('Тяга верхнего блока')
+  await expect(page.getByLabel('Повторы').first()).toHaveValue('12')
+  await expect(page.getByLabel('Повторы').nth(1)).toHaveValue('8')
+  expect(await page.locator('[data-exercise-index]').evaluateAll(elements => elements.every(element => element.getAnimations().length === 0))).toBe(true)
+  await page.getByRole('button', { name: 'Переместить упражнение 1 ниже' }).click()
+  await expect(page.getByRole('button', { name: 'Упражнение', exact: true }).first()).toContainText('Жим лёжа')
+})
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`adding exercises and sets reveals and focuses the new fields (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion })
+    await page.goto('/programs/new')
+    const addExercise = page.getByRole('button', { name: 'Добавить упражнение' })
+    for (let index = 0; index < 3; index++) await addExercise.click()
+
+    const newCard = page.locator('[data-exercise-index="2"]')
+    const picker = newCard.getByRole('button', { name: 'Упражнение', exact: true })
+    await expect(picker).toBeFocused()
+    await expect(picker).toBeInViewport({ ratio: 1 })
+    await expect(newCard.getByRole('button', { name: 'Перетащить упражнение 3' })).toBeInViewport({ ratio: 1 })
+    await expect(page.getByRole('option')).toHaveCount(0)
+
+    // Add sets to an earlier card to catch accidental focus on the last exercise.
+    const firstCard = page.locator('[data-exercise-index="0"]')
+    await firstCard.getByLabel('Повторы').fill('8')
+    await firstCard.getByLabel('Вес, кг').fill('50')
+    for (let index = 0; index < 6; index++) {
+      await firstCard.getByRole('button', { name: 'Добавить подход' }).click()
+      const repetitions = firstCard.getByLabel('Повторы').last()
+      await expect(repetitions).toBeFocused()
+      await expect(repetitions).toBeInViewport({ ratio: 1 })
+      await expect(repetitions).toHaveValue('8')
+    }
+    await expect(firstCard.getByLabel('Повторы')).toHaveCount(7)
+    await expect(newCard.getByLabel('Повторы')).toHaveCount(1)
+  })
+}
+
+
+test('repetitions copy without weight and empty weights save as zero', async ({ page }) => {
+  let submittedBody: Record<string, unknown> | undefined
+  await page.route('**/api/api-tren/training-programs/1', async (route) => {
+    submittedBody = route.request().postDataJSON() as Record<string, unknown>
+    await route.fulfill({ json: { data: { id: 1, weekday: currentMoscowWeekday(), ...submittedBody } } })
+  })
+  await page.goto('/programs/1/edit')
+  const weights = page.getByLabel('Вес, кг')
+  await expect(weights).toHaveCount(3)
+  for (const weight of await weights.all()) await weight.fill('')
+  await page.getByRole('button', { name: 'Добавить подход' }).click()
+  await expect(page.getByLabel('Повторы').last()).toHaveValue('3')
+  await expect(weights.last()).toHaveValue('')
+  await expect(weights.last()).toHaveAttribute('placeholder', '0')
+  await page.getByRole('button', { name: 'Сохранить изменения' }).click()
+  await expect(page).toHaveURL(/\/programs\/1$/)
+  expect(submittedBody).toMatchObject({
+    exercises: [{ exercise_id: 10, sets: [
+      { repetitions: 6, working_weight_kg: 0 },
+      { repetitions: 6, working_weight_kg: 0 },
+      { repetitions: 3, working_weight_kg: 0 },
+      { repetitions: 3, working_weight_kg: 0 },
+    ] }],
+  })
+})
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`reordering keeps focus and the moved card header in view (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion })
+    await page.goto('/programs/new')
+    await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+    const firstCard = page.locator('[data-exercise-index="0"]')
+    for (let index = 0; index < 5; index++) await firstCard.getByRole('button', { name: 'Добавить подход' }).click()
+    await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+    const key = await page.locator('[data-exercise-index="1"]').getAttribute('data-exercise-key')
+    await page.getByRole('button', { name: 'Добавить упражнение' }).click()
+    const movedCard = page.locator(`[data-exercise-key="${key}"]`)
+
+    await movedCard.getByRole('button', { name: 'Переместить упражнение 2 выше' }).click()
+    await expect(movedCard).toHaveAttribute('data-exercise-index', '0')
+    await expect.poll(() => movedCard.evaluate(element => element.contains(document.activeElement))).toBe(true)
+    await expect(movedCard.getByRole('button', { name: 'Перетащить упражнение 1' })).toBeInViewport({ ratio: 1 })
+    await expect(movedCard.getByRole('button', { name: 'Упражнение', exact: true })).toBeInViewport({ ratio: 1 })
+
+    const down = movedCard.getByRole('button', { name: /Переместить упражнение \d+ ниже/ })
+    await down.click()
+    await expect(movedCard).toHaveAttribute('data-exercise-index', '1')
+    await expect(down).toBeFocused()
+    await expect(down).toBeInViewport({ ratio: 1 })
+    await down.press('Enter')
+    await expect(movedCard).toHaveAttribute('data-exercise-index', '2')
+    await expect.poll(() => movedCard.evaluate(element => element.contains(document.activeElement))).toBe(true)
+    await expect(movedCard.getByRole('button', { name: 'Перетащить упражнение 3' })).toBeInViewport({ ratio: 1 })
+  })
+}
