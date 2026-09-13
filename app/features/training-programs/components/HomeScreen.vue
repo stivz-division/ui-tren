@@ -5,13 +5,14 @@ import { formatDate, getGreeting, getWeekday } from '~/utils/date'
 import { useExerciseCatalog } from '../composables/useExerciseCatalog'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import { buildHomeState } from '../model/home'
-import { ActiveWorkoutBanner } from '~/features/workout-sessions'
+import { ActiveWorkoutBanner, useActiveWorkoutSession } from '~/features/workout-sessions'
 import RestDayCard from './RestDayCard.vue'
 import TodayWorkoutCard from './TodayWorkoutCard.vue'
 import UpcomingProgramCard from './UpcomingProgramCard.vue'
 
 const { firstName, status: authStatus } = useAuth()
 const { programs, status, error, load } = useTrainingPrograms()
+const { session: activeSession } = useActiveWorkoutSession()
 const catalog = useExerciseCatalog()
 const clock = useLocalClock()
 const home = computed(() => clock.value
@@ -47,8 +48,8 @@ function startTodayWorkout(programId: number) {
       <template #actions><UButton label="Повторить" color="error" variant="soft" size="lg" class="min-h-11" @click="load(true)" /></template>
     </UAlert>
     <div v-else-if="home" class="space-y-10">
-      <TodayWorkoutCard v-if="home.kind === 'workout'" :program="home.today" :pending="false" @start="startTodayWorkout(home.today.id)" />
-      <RestDayCard v-else />
+      <TodayWorkoutCard v-if="home.kind === 'workout' && !activeSession" :program="home.today" :pending="false" @start="startTodayWorkout(home.today.id)" />
+      <RestDayCard v-else-if="home.kind === 'rest'" />
       <UpcomingProgramCard v-if="home.next" :program="home.next.program" :days-until="home.next.daysUntil" :catalog="catalog.exercises.value" :detailed="home.kind === 'rest'" />
     </div>
   </div>
