@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Exercise, TrainingProgram } from '#shared/types/api-tren'
 import { formatExerciseCount, getExerciseFallbackName, WEEKDAY_LABELS } from '../model/program'
-import GroupedSetSummary from './GroupedSetSummary.vue'
+import GroupedSetSummary from '~/components/ui/GroupedSetSummary.vue'
 
 const props = withDefaults(defineProps<{
   program: TrainingProgram

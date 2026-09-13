@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ensureCurrentExerciseOption, findNextProgram, formatExerciseCount, formatSetSummary, sortProgramsByWeekday } from './program'
+import { ensureCurrentExerciseOption, findNextProgram, formatExerciseCount, sortProgramsByWeekday } from './program'
+import { formatSetSummary } from '~/utils/set-summary'
 
 describe('training program presentation', () => {
   it('omits zero weights while preserving repetitions and nonzero weights', () => {

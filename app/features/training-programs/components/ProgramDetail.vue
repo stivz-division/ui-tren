@@ -2,7 +2,7 @@
 import type { Exercise, TrainingProgram } from '#shared/types/api-tren'
 import { getExerciseFallbackName, WEEKDAY_LABELS } from '../model/program'
 import DeleteProgramSheet from './DeleteProgramSheet.vue'
-import GroupedSetSummary from './GroupedSetSummary.vue'
+import GroupedSetSummary from '~/components/ui/GroupedSetSummary.vue'
 
 const props = defineProps<{ program: TrainingProgram, catalog: Exercise[], startPending: boolean, deletePending: boolean }>()
 defineEmits<{ start: [], delete: [] }>()

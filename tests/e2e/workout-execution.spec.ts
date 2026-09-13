@@ -190,7 +190,9 @@ test('exercise workflow saves edits, completes, skips, reopens and finishes into
   await page.getByRole('link', { name: 'История тренировок', exact: true }).click()
   await expect(page.getByText('Завершена', { exact: true })).toBeVisible()
   await page.getByText('Результаты упражнений').click()
-  await expect(page.getByText('1. 12 повт. × 42.5 кг')).toBeVisible()
+  const result = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Жим лёжа', exact: true }) })
+  await expect(result).toContainText('1×12')
+  await expect(result).toContainText('42,5 кг')
 })
 
 test('home resumes a session after reload and cancel requires explicit confirmation', async ({ page }) => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PlannedSet } from '#shared/types/api-tren'
-import { formatSetSummary, formatWeight, groupAdjacentSets } from '../model/program'
+import { formatSetSummary, formatWeight, groupAdjacentSets } from '~/utils/set-summary'
 
 const props = defineProps<{ sets: PlannedSet[], prominent?: boolean }>()
 const summary = computed(() => formatSetSummary(props.sets))

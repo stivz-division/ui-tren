@@ -6,7 +6,7 @@ import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import { useExerciseCatalog } from '../composables/useExerciseCatalog'
 import { getExerciseFallbackName } from '../model/program'
 import { useActiveWorkoutSession } from '~/features/workout-sessions'
-import GroupedSetSummary from './GroupedSetSummary.vue'
+import GroupedSetSummary from '~/components/ui/GroupedSetSummary.vue'
 import ProgramSetsModal from './ProgramSetsModal.vue'
 
 const props = defineProps<{ programId: number }>()
