@@ -9,9 +9,12 @@ const { session, loading, loaded, error: loadError } = workout.active
 const { drafts, error, busy, acting, dirty, queued, canFinish, result } = workout
 const selected = shallowRef(0)
 const cancelOpen = shallowRef(false)
+const unfinishedOpen = shallowRef(false)
+const finishControl = useTemplateRef<HTMLElement>('finishControl')
 const carousel = useTemplateRef('carousel')
 const exercises = computed(() => session.value?.exercises ?? [])
 const processed = computed(() => exercises.value.filter(exercise => exercise.status !== 'pending').length)
+const hasRemaining = computed(() => processed.value < exercises.value.length)
 const initialIndex = shallowRef(0)
 watch(() => session.value?.id, () => {
   initialIndex.value = Math.max(0, exercises.value.findIndex(exercise => exercise.status === 'pending'))
@@ -26,7 +29,30 @@ async function action(exerciseId: number, value: ExerciseAction) {
     const next = exercises.value.findIndex((exercise, index) => index > selected.value && exercise.status === 'pending')
     const first = exercises.value.findIndex(exercise => exercise.status === 'pending')
     if (next >= 0 || first >= 0) select(next >= 0 ? next : first)
+    else if (canFinish.value) {
+      await nextTick()
+      focusFinish()
+      finishControl.value?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        block: 'center',
+      })
+    }
   }
+}
+function focusFinish() {
+  finishControl.value?.querySelector('button')?.focus({ preventScroll: true })
+}
+function restoreFinishFocus(event: Event) {
+  event.preventDefault()
+  focusFinish()
+}
+async function finish() {
+  if (busy.value) return
+  if (hasRemaining.value) {
+    unfinishedOpen.value = true
+    return
+  }
+  await workout.finish('complete')
 }
 async function cancel() { if (await workout.finish('cancel')) cancelOpen.value = false }
 </script>
@@ -36,18 +62,20 @@ async function cancel() { if (await workout.finish('cancel')) cancelOpen.value =
     <div v-if="session && !result" class="mb-3 flex flex-wrap items-start justify-between gap-4">
       <BackButton class="-ml-3 shrink-0" />
       <div role="group" aria-label="Действия тренировки" class="ml-auto flex gap-5">
-        <div class="grid justify-items-center gap-1.5">
+        <div ref="finishControl" class="grid scroll-mt-6 justify-items-center gap-1.5">
           <UButton
             aria-label="Завершить тренировку"
-            :aria-describedby="!canFinish ? 'workout-finish-hint' : undefined"
+            :aria-describedby="canFinish ? 'workout-ready-hint' : 'workout-finish-hint'"
             icon="i-lucide-flag"
             size="xl"
             class="size-12 justify-center rounded-full"
-            :disabled="!canFinish"
+            :class="canFinish ? 'ring-3 ring-primary ring-offset-4 ring-offset-default' : ''"
+            :variant="canFinish ? 'solid' : 'soft'"
+            :disabled="busy || (!hasRemaining && !canFinish)"
             :loading="acting"
-            @click="workout.finish('complete')"
+            @click="finish"
           />
-          <span class="text-xs font-medium text-muted" aria-hidden="true">Завершить</span>
+          <span class="text-xs font-medium" :class="canFinish ? 'text-primary' : 'text-muted'" aria-hidden="true">Завершить</span>
         </div>
         <div class="grid justify-items-center gap-1.5">
           <UButton
@@ -61,6 +89,15 @@ async function cancel() { if (await workout.finish('cancel')) cancelOpen.value =
             @click="cancelOpen = true"
           />
           <span class="text-xs font-medium text-muted" aria-hidden="true">Отменить</span>
+        </div>
+      </div>
+    </div>
+    <div v-if="session && !result" role="status" aria-atomic="true">
+      <div v-if="canFinish" id="workout-ready-hint" class="mb-5 flex items-start gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-4">
+        <UIcon name="i-lucide-circle-check" class="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+        <div class="min-w-0">
+          <p class="font-semibold text-highlighted">Можно завершить тренировку</p>
+          <p class="mt-1 text-sm text-default">Все упражнения выполнены или пропущены. Нажмите «Завершить» выше.</p>
         </div>
       </div>
     </div>
@@ -99,6 +136,17 @@ async function cancel() { if (await workout.finish('cancel')) cancelOpen.value =
       </UCarousel>
       <div class="mt-5 flex items-center justify-between gap-3 text-sm text-muted"><span>Выполнено или пропущено</span><span class="font-semibold text-highlighted">{{ processed }} / {{ exercises.length }}</span></div>
       <p v-if="!canFinish" id="workout-finish-hint" class="mt-5 text-sm text-muted">{{ dirty ? 'Дождитесь сохранения или исправьте введённые данные.' : 'Завершите или пропустите каждое упражнение, чтобы закончить тренировку.' }}</p>
+      <UModal
+        v-model:open="unfinishedOpen"
+        title="Остались незавершённые упражнения"
+        description="Чтобы завершить тренировку, завершите или пропустите все оставшиеся упражнения."
+        :content="{ onCloseAutoFocus: restoreFinishFocus }"
+        :ui="{ content: 'max-w-md', wrapper: 'pe-10', description: 'text-base text-default' }"
+      >
+        <template #footer>
+          <UButton label="Продолжить тренировку" block size="xl" @click="unfinishedOpen = false" />
+        </template>
+      </UModal>
       <UModal v-model:open="cancelOpen" title="Отменить тренировку?" description="Тренировка останется в истории как отменённая. Продолжить её будет нельзя." :dismissible="!acting" :close="!acting">
         <template #footer><div class="grid w-full grid-cols-2 gap-3"><UButton label="Продолжить" color="neutral" variant="outline" block size="xl" :disabled="acting" @click="cancelOpen = false" /><UButton label="Да, отменить" color="error" block size="xl" :loading="acting" :disabled="acting" @click="cancel" /></div></template>
       </UModal>

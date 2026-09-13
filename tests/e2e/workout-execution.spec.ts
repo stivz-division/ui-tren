@@ -112,6 +112,58 @@ test('preparation edits the program only on save and starts only on confirmation
   expect(state.starts).toBe(1)
 })
 
+test('early finish explains remaining exercises without submitting the session', async ({ page }) => {
+  const state = await setup(page)
+  await page.goto('/workout-session')
+  const finish = page.getByRole('button', { name: 'Завершить тренировку', exact: true })
+  await expect(finish).toBeEnabled()
+  await finish.click()
+  const modal = page.getByRole('dialog')
+  await expect(modal).toContainText('Чтобы завершить тренировку, завершите или пропустите все оставшиеся упражнения.')
+  expect(state.actions).toEqual([])
+  await page.screenshot({ path: test.info().outputPath('unfinished-workout.png'), fullPage: true, animations: 'disabled' })
+  await modal.getByRole('button', { name: 'Продолжить тренировку', exact: true }).click()
+  await expect(modal).toBeHidden()
+  await expect(finish).toBeFocused()
+  await finish.click()
+  await page.keyboard.press('Escape')
+  await expect(modal).toBeHidden()
+  await expect(finish).toBeFocused()
+})
+
+for (const lastAction of ['Завершить упражнение', 'Пропустить упражнение']) {
+  test(`last remaining exercise focuses finish after ${lastAction}`, async ({ page }) => {
+    const state = await setup(page)
+    // The last remaining exercise need not be last in the carousel.
+    state.active!.exercises[1]!.status = 'completed'
+    state.active!.exercises[2]!.status = 'skipped'
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/workout-session')
+    const finish = page.getByRole('button', { name: 'Завершить тренировку', exact: true })
+    await page.getByRole('region', { name: 'Жим лёжа' }).getByRole('button', { name: lastAction, exact: true }).click()
+    await expect(finish).toBeFocused()
+    await expect(finish).toBeInViewport()
+    await expect(page.getByRole('status').filter({ hasText: 'Можно завершить тренировку' })).toBeVisible()
+    expect(state.active?.status).toBe('in_progress')
+    await page.screenshot({ path: test.info().outputPath('workout-ready.png'), fullPage: true, animations: 'disabled' })
+    await page.getByRole('region', { name: 'Жим лёжа' }).getByRole('button', { name: 'Продолжить упражнение' }).click()
+    await expect(page.getByText('Можно завершить тренировку', { exact: true })).toBeHidden()
+    await finish.click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    expect(state.active?.status).toBe('in_progress')
+  })
+}
+
+test('closing the final carousel card does not focus finish while earlier exercises remain', async ({ page }) => {
+  await setup(page)
+  await page.goto('/workout-session')
+  await page.getByRole('button', { name: /Упражнение 3:/ }).click()
+  await page.getByRole('region', { name: 'Приседания' }).getByRole('button', { name: 'Пропустить упражнение' }).click()
+  await expect(page.getByRole('button', { name: /Упражнение 1:/ })).toHaveAttribute('aria-current', 'step')
+  await expect(page.getByRole('button', { name: 'Завершить тренировку', exact: true })).not.toBeFocused()
+  await expect(page.getByText('Можно завершить тренировку', { exact: true })).toBeHidden()
+})
+
 test('exercise workflow saves edits, completes, skips, reopens and finishes into history', async ({ page }) => {
   const state = await setup(page)
   await page.goto('/workout-session')
