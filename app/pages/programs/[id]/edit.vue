@@ -10,6 +10,7 @@ import type { ApiError } from '~/features/training-programs/model/errors'
 import { toUpdateProgramInput } from '~/features/training-programs/model/form'
 
 const route = useRoute()
+const router = useRouter()
 const programId = Number(route.params.id)
 const programsState = useTrainingPrograms()
 const catalog = useExerciseCatalog()
@@ -38,7 +39,13 @@ async function submit() {
     const saved = await programsState.update(programId, result.value)
     draftState.reset(saved)
     toast.add({ title: 'Изменения сохранены', color: 'success' })
-    await navigateTo(`/programs/${programId}`)
+    const detailPath = `/programs/${programId}`
+    // Reuse the detail entry so Back still leads to the screen that opened it.
+    if (window.history.state?.back === detailPath) {
+      router.back()
+      return
+    }
+    await navigateTo(detailPath, { replace: true })
   }
   catch (cause) {
     const error = cause as ApiError

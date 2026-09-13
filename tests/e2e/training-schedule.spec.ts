@@ -350,6 +350,36 @@ test('set validation errors are associated with their inputs', async ({ page }) 
   await expect(page.locator(`#${weightErrorId}`)).toHaveAttribute('role', 'alert')
 })
 
+for (const origin of ['/', '/programs']) {
+  test(`saved edits preserve Back navigation to ${origin}`, async ({ page }) => {
+    await page.route('**/api/api-tren/training-programs/2', async (route) => {
+      const input = route.request().postDataJSON()
+      await route.fulfill({ json: { data: {
+        id: 2,
+        weekday: 1,
+        name: input.name,
+        exercises: input.exercises.map((exercise: { exercise_id: number, sets: object[] }, index: number) => ({
+          ...exercise,
+          position: index + 1,
+          sets: exercise.sets.map((set, setIndex) => ({ ...set, position: setIndex + 1 })),
+        })),
+      } } })
+    })
+
+    await page.goto(origin)
+    await page.locator('a[href="/programs/2"]').click()
+    for (let edit = 1; edit <= 2; edit += 1) {
+      await page.getByRole('link', { name: 'Редактировать' }).click()
+      await page.getByLabel('Название').fill(`Обновлённая тренировка ${edit}`)
+      await page.getByRole('button', { name: 'Сохранить изменения' }).click()
+      await expect(page).toHaveURL('/programs/2')
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Обновлённая тренировка ${edit}`)
+    }
+    await page.getByRole('button', { name: 'Назад', exact: true }).click()
+    await expect(page).toHaveURL(origin)
+  })
+}
+
 test('edit replaces name and exercises without weekday', async ({ page }) => {
   let submittedBody: Record<string, unknown> | undefined
   await page.route('**/api/api-tren/training-programs/1', async (route) => {
@@ -365,6 +395,9 @@ test('edit replaces name and exercises without weekday', async ({ page }) => {
   await page.getByLabel('Название').fill('Обновлённая тренировка')
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   await expect(page).toHaveURL(/\/programs\/1$/)
+
+  await page.getByRole('button', { name: 'Назад', exact: true }).click()
+  await expect(page).toHaveURL('/programs')
 
   expect(submittedBody).not.toHaveProperty('weekday')
   expect(submittedBody).toMatchObject({
