@@ -14,7 +14,7 @@ pnpm dev
 
 Приложение будет доступно на `http://localhost:3000`.
 
-Для запуска вне Telegram можно задать в `.env` непустой `TELEGRAM_INIT_DATA`. Значение используется вместо `window.Telegram.WebApp.initData` только при `APP_ENV=local`. Обе переменные читаются сервером; `TELEGRAM_INIT_DATA` не попадает в client bundle, логи или persistent browser storage.
+Для запуска вне Telegram можно задать в `.env` непустой `TELEGRAM_INIT_DATA`. При `APP_ENV=local` Nuxt BFF использует это значение вместо browser `initData` только в серверном запросе к Laravel. Fixture не попадает в client bundle, логи или persistent browser storage.
 
 ## Docker
 
@@ -23,11 +23,11 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Compose запускает только Nuxt UI. Адрес Laravel API задаётся переменной `NUXT_API_BASE`.
+Compose запускает только Nuxt UI. Адрес Laravel API задаётся переменной `NUXT_API_BASE`; для Laravel на хост-машине используйте `http://host.docker.internal:8000/api`.
 
-## Backend-зависимость
+## Каталог упражнений
 
-Конструктору и человекочитаемым карточкам нужен `GET /api/exercises` с полями `id` и `name`. Пока endpoint отсутствует, UI показывает безопасные подписи вида «Упражнение №10» для уже сохранённых программ и явно сообщает, что добавление упражнений недоступно. Production-каталог не захардкожен.
+Конструктор и карточки загружают production-каталог через `GET /api/exercises` с полями `id` и `name`. При временной ошибке UI предлагает повторить запрос; для ранее сохранённого неизвестного `exercise_id` используется безопасная подпись вида «Упражнение №10». Каталог в frontend не захардкожен.
 
 ## Проверки
 

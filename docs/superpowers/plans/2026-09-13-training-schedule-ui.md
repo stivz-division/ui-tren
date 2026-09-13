@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Backend Laravel API и его payloads не изменяются.
-- Production-код не содержит статического каталога упражнений; `GET /api/exercises` остаётся явно отмеченной backend dependency.
+- Production-код не содержит статического каталога упражнений и загружает его через `GET /api/exercises`.
 - Telegram `initData`, Bearer token и bot token не логируются и не сохраняются в browser persistence.
 - Все даты расписания вычисляются в `Europe/Moscow` через одну config constant.
 - Компоненты используют Vue 3 Composition API и `<script setup lang="ts">`.
@@ -337,7 +337,7 @@
 
 - [x] **Step 4: Update factual documentation**
 
-  Document scripts, BFF cookie flow, new feature directories/routes, `NUXT_API_BASE`, test commands, and the unresolved `GET /api/exercises` dependency. Preserve the contents of the existing user-authored `docs/training-schedule.md` and `docs/workout-session.md` unless a link-only correction is required.
+  Document scripts, BFF cookie flow, new feature directories/routes, `NUXT_API_BASE`, test commands, and the `GET /api/exercises` integration. Preserve the contents of the existing user-authored `docs/training-schedule.md` and `docs/workout-session.md` unless a link-only correction is required.
 
 - [x] **Step 5: Run the complete verification matrix**
 

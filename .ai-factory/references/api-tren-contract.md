@@ -65,6 +65,11 @@ interface PlannedSetInput {
   working_weight_kg: number
 }
 
+interface Exercise {
+  id: number
+  name: string
+}
+
 interface PlannedExercise {
   exercise_id: number
   position: number
@@ -124,6 +129,20 @@ Timestamps сериализуются как `DATE_ATOM`/RFC 3339. Workout clock
 ## Планирование тренировок
 
 Все endpoints требуют Bearer token.
+
+### Каталог упражнений
+
+`GET /api/exercises` возвращает доступные для планирования упражнения:
+
+```json
+{
+  "data": [
+    { "id": 10, "name": "Жим лёжа" }
+  ]
+}
+```
+
+Frontend использует этот каталог для выбора упражнений и разрешения `exercise_id` в человекочитаемое имя. Production mock-каталог не используется.
 
 | Method | Path | Успех | Ответ |
 |---|---|---:|---|
@@ -275,7 +294,6 @@ interface WorkoutSessionHistoryPage {
 
 ## Известные пробелы backend
 
-- Нет endpoint каталога disciplines/exercises. Конструктор программ не может получить допустимые `exercise_id` и названия через API.
 - Planning resource содержит только `exercise_id`, без названия упражнения.
 - Нет `/me`, logout/revoke или profile endpoint.
 - CORS, deployment origin и cookie policy не определены публичным контрактом.
@@ -289,4 +307,3 @@ interface WorkoutSessionHistoryPage {
 
 - Backend repository: https://github.com/stivz-division/api-tren
 - Telegram Mini Apps: https://core.telegram.org/bots/webapps
-

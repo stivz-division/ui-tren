@@ -79,7 +79,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `app/app.vue` | Корневой Nuxt UI provider |
 | `app/pages/index.vue` | Главная с тренировкой сегодня или rest day |
 | `app/pages/programs/` | Список, создание, просмотр и редактирование программ |
-| `server/api/auth.post.ts` | BFF auth; local `TELEGRAM_INIT_DATA` override |
+| `server/api/auth.post.ts` | BFF auth и server-only local-подмена `TELEGRAM_INIT_DATA` |
 | `server/api/api-tren/[...path].ts` | Узкий allowlisted proxy к Laravel API |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |
 | `README.md` | Краткая текущая landing page репозитория |
@@ -90,7 +90,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 - `docker compose build`
 - `docker compose up`
 
-Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`. При `APP_ENV=local` непустой server-only `TELEGRAM_INIT_DATA` заменяет browser `initData` для авторизации.
+Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`; для backend на хосте используется `http://host.docker.internal:8000/api`. При `APP_ENV=local` непустой server-only `TELEGRAM_INIT_DATA` заменяет browser `initData` только в BFF-запросе к Laravel.
 
 ## Документация
 
@@ -122,7 +122,7 @@ Compose запускает только Nuxt UI. Laravel API должен быт
 ## Правила для agents
 
 - Перед планированием или реализацией читать `.ai-factory/DESCRIPTION.md`, `.ai-factory/ARCHITECTURE.md`, `.ai-factory/rules/base.md` и релевантные references.
-- Не считать отсутствующие backend возможности реализованными. Каталог упражнений сейчас не имеет API endpoint.
+- Каталог упражнений загружать только через backend `GET /api/exercises`; не добавлять production mock-данные.
 - Не логировать и не сохранять в persistent client storage Telegram `initData`, Sanctum token или bot token.
 - Backend response после mutation является authoritative state.
 - Разделять shell-команды, изменяющие Git state:

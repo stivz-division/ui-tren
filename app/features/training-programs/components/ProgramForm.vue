@@ -56,7 +56,7 @@ watch(() => props.errors, async (errors) => {
     <label class="block"><span class="mb-2 block text-base font-medium text-toned">Название</span><input v-model="model.name" class="min-h-14 w-full rounded-xl border border-default bg-default px-4 text-lg" :aria-invalid="Boolean(errors.name)" ><span v-if="errors.name" class="mt-1 block text-sm text-error" role="alert">{{ errors.name }}</span></label>
     <section aria-labelledby="exercises-title">
       <h2 id="exercises-title" class="mb-4 text-2xl font-bold text-highlighted">Упражнения</h2>
-      <UAlert v-if="catalogUnavailable" color="warning" variant="subtle" icon="i-lucide-unplug" title="Каталог упражнений пока недоступен" description="Для добавления упражнений нужен endpoint GET /api/exercises." class="mb-4">
+      <UAlert v-if="catalogUnavailable" color="warning" variant="subtle" icon="i-lucide-unplug" title="Каталог упражнений временно недоступен" description="Повторите запрос, чтобы снова загрузить упражнения." class="mb-4">
         <template #actions><UButton label="Повторить" color="warning" variant="soft" size="lg" @click="$emit('retryCatalog')" /></template>
       </UAlert>
       <UAlert v-else-if="catalogError" color="error" variant="subtle" icon="i-lucide-circle-alert" title="Не удалось загрузить каталог" :description="catalogError" class="mb-4">
