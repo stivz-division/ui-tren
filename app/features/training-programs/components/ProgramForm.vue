@@ -80,7 +80,7 @@ watch(() => props.errors, async (errors) => {
 </script>
 
 <template>
-  <form ref="formElement" class="space-y-7" novalidate @submit.prevent="$emit('submit')">
+  <form ref="formElement" class="space-y-7" :class="{ 'pb-32': mode === 'edit' }" novalidate @submit.prevent="$emit('submit')">
     <WeekdaySelector v-model="model.weekday" :occupied="occupiedWeekdays" :readonly="mode === 'edit'" :invalid="Boolean(errors.weekday)" />
     <p v-if="errors.weekday" class="text-sm text-error" role="alert">{{ errors.weekday }}</p>
     <label class="block"><span class="mb-2 block text-base font-medium text-toned">Название</span><input v-model="model.name" class="min-h-14 w-full rounded-xl border border-default bg-default px-4 text-lg" :aria-invalid="Boolean(errors.name)" ><span v-if="errors.name" class="mt-1 block text-sm text-error" role="alert">{{ errors.name }}</span></label>
@@ -97,9 +97,14 @@ watch(() => props.errors, async (errors) => {
       <TransitionGroup name="exercise" tag="div" class="relative flex flex-col gap-4">
         <PlannedExerciseEditor v-for="(exercise, index) in model.exercises" :key="exercise.key" v-model="model.exercises[index]!" :index="index" :catalog="catalog" :excluded-ids="model.exercises.map(item => item.exerciseId).filter((id): id is number => id !== null)" :errors="errors" :can-move-up="index > 0" :can-move-down="index < model.exercises.length - 1" @remove="removeExercise(index)" @move-up="move(index, index - 1)" @move-down="move(index, index + 1)" @drag-start="startDrag(index, $event)" @drag-end="finishDrag" @drop="dropExercise(index, $event)" />
       </TransitionGroup>
-      <UButton label="Добавить упражнение" icon="i-lucide-plus" color="neutral" variant="outline" block size="xl" class="mt-4" :disabled="catalogUnavailable || catalog.length === 0" @click="addExercise" />
+      <UButton v-if="mode === 'create'" label="Добавить упражнение" icon="i-lucide-plus" color="neutral" variant="outline" block size="xl" class="mt-4" :disabled="catalogUnavailable || catalog.length === 0" @click="addExercise" />
     </section>
-    <UButton type="submit" :label="mode === 'create' ? 'Создать тренировку' : 'Сохранить изменения'" block size="xl" :loading="pending" :disabled="pending" />
+    <div :class="{ 'fixed inset-x-0 bottom-0 z-40 border-t border-muted bg-default/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm': mode === 'edit' }">
+      <div :class="{ 'mx-auto max-w-[480px] space-y-3 px-5 py-3': mode === 'edit' }">
+        <UButton v-if="mode === 'edit'" label="Добавить упражнение" icon="i-lucide-plus" color="neutral" variant="outline" block size="xl" :disabled="catalogUnavailable || catalog.length === 0" @click="addExercise" />
+        <UButton type="submit" :label="mode === 'create' ? 'Создать тренировку' : 'Сохранить изменения'" block size="xl" :loading="pending" :disabled="pending" />
+      </div>
+    </div>
   </form>
 </template>
 
