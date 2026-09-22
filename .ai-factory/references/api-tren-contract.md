@@ -303,6 +303,17 @@ interface WorkoutSessionHistoryPage {
 
 Эти пункты нельзя молча компенсировать догадками frontend. Их нужно закрыть backend-контрактом или отдельным согласованным решением.
 
+## Cookie и восстановление BFF-сессии (2026-09-22)
+
+- HTTPS: `api_tren_session` — host-only session cookie с `Path=/; HttpOnly; Secure; SameSite=None; Partitioned`. HTTP development: `SameSite=Lax`, без Secure/Partitioned. Протокол определяется по TLS или `X-Forwarded-Proto`; reverse proxy должен перезаписывать этот заголовок и сохранять публичный Host, а прямой доступ к внутреннему Nuxt-порту не должен обходить proxy.
+- При HTTPS-входе сначала истекает старая непартиционированная Lax-cookie, затем устанавливается новая. Этот порядок сохраняет fallback для браузеров, игнорирующих Partitioned. Явное удаление использует те же атрибуты и удаляет legacy-cookie. Upstream 401 не отправляет удаление, чтобы запоздавший ответ не стёр новую сессию.
+- Все mutations BFF, в том числе `/api/auth`, требуют `X-UI-Tren-Request: 1`. Origin при наличии должен совпадать с origin приложения, Fetch Metadata при наличии — `same-origin`. Fetch из документа Mini App в iframe имеет origin приложения, а не Telegram. При отсутствии этих browser headers служебный заголовок остаётся обязательным; CORS для внешних origins не предоставляется.
+- Promise восстановления общий для всех API-клиентов одного Nuxt app instance и сохраняется после завершения для запоздавших 401. Допускается одна автоматическая попытка до явного входа. Второй 401 или ошибка восстановления переводят AuthGate в ошибку. Новый автоматический вход не запускается; кнопка «Повторить» начинает новый цикл по действию пользователя. Mutations и auth автоматически не повторяются на уровне fetch; reads допускают один transport retry только для 408/500/502/503/504, не для 401/429.
+- `npm run test:auth-browser`: Chrome, OpenSSL, свободные порты 4174 и 4180–4182. Изолированные синтетические initData/token, настоящий BFF и тестовый Laravel HTTP adapter; временный self-signed TLS. Проверяются HTTPS iframe, реальная блокировка обычной third-party cookie через CDP с отрицательным контролем, CHIPS, CSRF, миграция старой cookie, top-level HTTPS, HTTP и остановка auth-loop. Атрибуты удаления проверяются Vitest через настоящий h3 serializer. Запускать отдельно от других Nuxt dev/e2e процессов, использующих общую `.nuxt`.
+- Это не вход в реальный Telegram Web и не проверка Telegram signature/backend auth. Safari, Firefox, реальные iOS/Android WebViews и браузеры без поддержки CHIPS с запретом всех third-party cookies требуют отдельной проверки. В последнем случае UI останавливает recovery и предлагает разрешить cookies либо открыть Telegram на телефоне.
+
+Основания политики: [MDN CHIPS](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Third-party_cookies/Partitioned_cookies), [OWASP CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
 ## Источники
 
 - Backend repository: https://github.com/stivz-division/api-tren

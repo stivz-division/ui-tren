@@ -3,8 +3,12 @@ import { useAuth } from '../composables/useAuth'
 
 const { status, errorMessage, bootstrap } = useAuth()
 
-onMounted(() => {
+function retry() {
   void bootstrap().catch(() => undefined)
+}
+
+onMounted(() => {
+  retry()
 })
 </script>
 
@@ -30,7 +34,7 @@ onMounted(() => {
           label="Повторить"
           icon="i-lucide-refresh-cw"
           size="xl"
-          @click="bootstrap"
+          @click="retry"
         />
       </template>
       <template v-else>

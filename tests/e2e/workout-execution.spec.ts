@@ -342,7 +342,7 @@ test('server validation is attached to the set and the latest draft survives', a
   await expect(first.getByLabel('Вес, кг')).toHaveAttribute('aria-invalid', 'true')
 })
 
-test('reauthentication during program save preserves the modal draft and validation errors', async ({ page }) => {
+test('reauthentication preserves the modal draft and only retries saving after user action', async ({ page }) => {
   await setup(page, false)
   let attempts = 0
   await page.route('**/api/api-tren/training-programs/1', (route) => {
@@ -355,6 +355,10 @@ test('reauthentication during program save preserves the modal draft and validat
   await page.getByRole('button', { name: 'Изменить подходы: Жим лёжа' }).click()
   const modal = page.getByRole('dialog')
   await modal.getByLabel('Повторы').fill('15')
+  await modal.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(modal.getByRole('button', { name: 'Сохранить', exact: true })).toBeEnabled()
+  await expect(modal.getByLabel('Повторы')).toHaveValue('15')
+  expect(attempts).toBe(1)
   await modal.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(modal.getByText('Проверьте повторения')).toBeVisible()
   await expect(modal.getByLabel('Повторы')).toHaveValue('15')

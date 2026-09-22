@@ -43,12 +43,14 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── layouts/default.vue           # Общий AppShell
 │   └── pages/                        # Routes /, /programs*, /workout-session*, /workout-history, /workout-analysis/:id
 ├── server/
+│   ├── middleware/api-csrf.ts       # Same-origin/custom-header CSRF gate для BFF mutations
 │   ├── api/auth.post.ts              # Telegram initData -> HttpOnly session cookie
 │   ├── api/api-tren/[...path].ts     # Allowlisted authenticated Laravel proxy
 │   └── utils/api-tren/               # Proxy paths, cookie и safe error helpers
 ├── shared/types/api-tren.ts          # Wire DTO Laravel API
 ├── shared/types/workout-analysis.ts  # Анализ, метрики, этапы и рекомендации Laravel API
 ├── tests/e2e/                        # Playwright Telegram/mobile scenarios
+├── tests/auth-browser/              # Реальный BFF в HTTPS cross-site iframe, CHIPS и recovery
 ├── Dockerfile                        # Development image для Nuxt UI
 ├── compose.yml                       # Локальный запуск единственного UI-сервиса
 ├── .env.example                      # Публичные настройки порта и внешнего API
@@ -91,6 +93,8 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `app/composables/useWorkoutPreparation.ts` | Проверка active/history, рекомендации до PUT active |
 | `app/features/workout-analysis/index.ts` | Общий анализ, кеш по sessionId, публичные exports |
 | `server/api/auth.post.ts` | BFF auth и server-only local-подмена `TELEGRAM_INIT_DATA` |
+| `server/middleware/api-csrf.ts` | Проверка источника и обязательного заголовка изменяющих BFF-запросов |
+| `playwright.auth.config.ts` | Изолированный HTTPS auth-стенд: `npm run test:auth-browser` |
 | `server/api/api-tren/[...path].ts` | Узкий allowlisted proxy к Laravel API |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |
 | `README.md` | Краткая текущая landing page репозитория |

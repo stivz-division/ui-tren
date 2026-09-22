@@ -98,7 +98,9 @@ tests/
 3. BFF вызывает Laravel `POST /api/auth` и сохраняет Bearer token в `HttpOnly`, `Secure`, `SameSite` cookie.
 4. Browser вызывает только same-origin BFF; server adapter добавляет Authorization header к запросу Laravel.
 5. BFF нормализует transport errors, но сохраняет `status`, domain `code`, validation `errors` и server message.
-6. При `401` cookie очищается; разрешена одна контролируемая re-authentication, без бесконечного retry loop.
+6. На HTTPS используется `HttpOnly; Secure; SameSite=None; Partitioned`, на HTTP — `HttpOnly; SameSite=Lax`. Установка и удаление используют одну политику. Reverse proxy сохраняет публичный Host и перезаписывает `X-Forwarded-Proto` фактическим протоколом клиента.
+7. Изменяющие BFF-запросы, включая auth, требуют `X-UI-Tren-Request: 1`; middleware проверяет Origin/Fetch Metadata, cross-origin CORS не разрешается.
+8. Один Nuxt app instance разделяет одну автоматическую re-authentication до следующего явного входа. Поздние 401 старых запросов используют ту же попытку; повторный отказ останавливает запросы и показывает AuthGate. Повторяются только reads. Upstream 401 не удаляет cookie: запоздавший ответ мог бы стереть новую сессию.
 
 Proxy не должен принимать произвольный upstream URL. Разрешён только настроенный private `apiBase`, а forwarded path ограничивается известным `/api` contract.
 

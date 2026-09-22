@@ -1,4 +1,4 @@
-import { clearApiTrenToken, getApiTrenToken, safeUpstreamData } from '../../utils/api-tren/request'
+import { getApiTrenToken, safeUpstreamData } from '../../utils/api-tren/request'
 import { isAllowedApiRequest } from '../../utils/api-tren/paths'
 
 export default defineEventHandler(async (event) => {
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   catch (error) {
     const upstream = error as { response?: { status?: number, _data?: unknown } }
     const status = upstream.response?.status ?? 502
-    if (status === 401) clearApiTrenToken(event)
+    // A delayed 401 must not delete the cookie installed by a concurrent login.
     throw createError({
       statusCode: status,
       statusMessage: 'API request failed',

@@ -1,5 +1,4 @@
 import { useAuth } from '~/features/auth/composables/useAuth'
-import { createAuthorizedRequest } from '~/features/auth/model/auth'
 import { normalizeApiError } from '~/utils/api-error'
 import { logger } from '~/utils/logger'
 
@@ -10,11 +9,7 @@ export interface ApiRequestOptions {
 }
 
 export function useApiClient() {
-  const { reauthenticate } = useAuth()
-  const request = createAuthorizedRequest(
-    (path, options) => $fetch(path, options as ApiRequestOptions),
-    reauthenticate,
-  )
+  const { authorizedRequest: request } = useAuth()
 
   return {
     async request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
