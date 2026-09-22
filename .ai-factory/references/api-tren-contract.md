@@ -2,7 +2,7 @@
 
 > Источники: https://github.com/stivz-division/api-tren, https://core.telegram.org/bots/webapps
 > Создано: 2026-09-13
-> Обновлено: 2026-09-13
+> Обновлено: 2026-09-22 (добавлены анализ и рекомендации; остальные разделы сохраняют дату исходной проверки)
 > Workout endpoints и schemas повторно сверены с локальным `api-tren/openapi.json` 2026-09-13; поведение skip/reopen и ограничения веса — с backend source. Остальной контракт: `master`, состояние GitHub на 2026-09-12.
 
 ## Обзор
@@ -315,3 +315,28 @@ interface WorkoutSessionHistoryPage {
 - Каждый валидный ввод ставит snapshot подходов в последовательную очередь. Черновики сохраняются только в памяти. Ошибка останавливает очередь; UI сохраняет черновики и предлагает явно перечитать состояние и повторить сохранение.
 - complete exercise отправляет `sets`; skip/reopen и complete/cancel session используют POST. Отмена требует подтверждения. Завершение разрешено после complete/skip всех упражнений.
 - История использует `meta.next_cursor` из GET workout-sessions, отображает completed/cancelled и фактические результаты. URL из `links` не используется для запросов.
+
+## Анализ и рекомендации (2026-09-22)
+
+Источник: контракт задачи; структура DTO сверена read-only с локальными `app/WorkoutAnalysis/Presentation/Http/Resources` backend. Frontend types: `shared/types/workout-analysis.ts`. Backend не менялся.
+
+| Method | Path (после `/api`) | Ответ |
+|---|---|---|
+| GET | `/workout-sessions/{id}/analysis` | `{ data: WorkoutAnalysis }` |
+| POST | `/workout-recommendations/{id}/apply` | `{ data: WorkoutRecommendation }`, без request body |
+| POST | `/workout-recommendations/{id}/reject` | `{ data: WorkoutRecommendation }`, без request body |
+
+Все endpoints авторизованы. GET только читает готовность, не запускает и не перезапускает генерацию; 404 означает недоступный анализ.
+
+- `status` и верхний `failure_code` относятся к числовому сравнению. `overall_status` агрегирует этапы; ошибка одного этапа не скрывает остальные результаты. Завершение генерации не требует решения пользователя.
+- `result` содержит `training_program_id`, `program_name`, `workout_completed_at`, `completed_exercises`, `skipped_exercises`, метрики `sets`, `repetitions`, `volume_kg` и `exercises`. Метрика: `planned`, `actual`, `difference`, `percentage` (nullable). Объём — кг × повторения. Все `_kg` уже в килограммах.
+- У упражнения authoritative `plan_fulfilled`, плановые/фактические подходы и `set_comparisons`, где сторона может быть null. Отсутствие подхода не равно нулевому весу/повторениям.
+- `ai_analysis` nullable; его `result.current_workout` и `result.history` — готовый безопасно отображаемый plain text. У заключения собственные status/failure_code.
+- `recommendation_generation` nullable; содержит собственные status/failure_code, no_change_reason, rejected_reasons, items. `items=null` не готовый пустой список; при completed + [] объяснение берётся из no_change_reason. Сырые failure_code/rejected_reasons не выводятся.
+- Типы рекомендаций: progression, adjustment, replacement. Статусы: proposed, applied, rejected, expired. Действия доступны только proposed. Сравнение original_sets/proposed_sets выполняется по position; имя замены разрешается через существующий GET exercises.
+- Apply меняет план программы для будущих сессий; исторический и активный снимки не меняются. Ответ mutation authoritative. При 409 и неизвестном сетевом результате перечитываются анализ и программы; повтор не отправляется автоматически.
+- Перед PUT active проверяется GET active. Последняя сессия программы ищется по всем необходимым cursor pages истории, включая cancelled. Только completed позволяет читать её анализ; более старые предложения не используются.
+- Начало новой сессии делает оставшиеся proposed неактуальными. UI предупреждает об этом, сериализует start с apply/reject, инвалидирует кеш анализов программы и использует серверный снимок сессии.
+- Polling 4 секунды с увеличением до 20 секунд обслуживает ожидаемые незавершённые этапы, прекращается на завершённой/ошибочной цепочке, transport error, 404, скрытии или уходе с экрана. Null после failed предыдущего этапа не вызывает бесконечный polling.
+
+Ограничения: нет публичного перезапуска анализа, отмены apply/reject, endpoint рекомендаций программы или фильтра training_program_id у истории. Повтор одинакового решения сервер поддерживает; противоположное решение/устаревшее предложение может вернуть 409. Рекомендации возможны после первой тренировки, но не гарантированы.

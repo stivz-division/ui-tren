@@ -82,6 +82,9 @@ tests/
 
 ## Коммуникация модулей
 
+- `workout-analysis` — самостоятельный slice с wire types в `shared/types/workout-analysis.ts`. Общий кеш `useState` индексируется по workoutSessionId; revisions защищают решения от устаревших reads. Polling принадлежит lifecycle видимого экрана.
+- `app/composables/useWorkoutPreparation.ts` координирует public exports `training-programs`, `workout-history`, `workout-sessions`, `workout-analysis`: проверяет активную сессию, ищет последнюю сессию программы курсором и сериализует применение рекомендаций со стартом. Компоненты анализа используются в истории и на подготовке.
+
 - Feature-модуль экспортирует только минимальный public surface: route component, typed composable и необходимые types.
 - Server state передаётся через typed composables и результаты Nuxt data fetching; глобальный store не является копией backend cache.
 - После mutation возвращённый Laravel resource заменяет локальное состояние соответствующей сущности.
@@ -166,4 +169,3 @@ Production implementation обязана дополнительно нормал
 - ❌ Дублирование wire DTO как editable form state без mapping/validation boundary.
 - ❌ Импорт feature internals через длинные относительные пути.
 - ❌ Создание пустых repository/service layers только ради схемы каталогов.
-

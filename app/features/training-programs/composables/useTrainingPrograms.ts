@@ -12,28 +12,47 @@ export function useTrainingPrograms() {
   const status = useState<QueryStatus>('training-programs-status', () => 'idle')
   const error = useState<ApiError | null>('training-programs-error', () => null)
   const mutationPending = useState<boolean>('training-programs-mutation', () => false)
+  const revision = useState<number>('training-programs-revision', () => 0)
   const { request } = useApiClient()
 
-  async function load(force = false, background = false): Promise<void> {
-    if (status.value === 'pending' || (status.value === 'success' && !force)) return
+  async function load(force = false, background = false): Promise<boolean> {
+    if (!force && (status.value === 'pending' || status.value === 'success')) return status.value === 'success'
+    const version = ++revision.value
     const previousStatus = status.value
     if (!background) status.value = 'pending'
     error.value = null
     try {
-      programs.value = sortProgramsByWeekday(await fetchTrainingPrograms(request))
+      const fetched = await fetchTrainingPrograms(request)
+      if (version !== revision.value) return false
+      programs.value = sortProgramsByWeekday(fetched)
       status.value = 'success'
+      return true
     }
     catch (cause) {
+      if (version !== revision.value) return false
       error.value = cause as ApiError
-      status.value = background ? previousStatus : 'error'
+      status.value = background && previousStatus === 'success' ? 'success' : 'error'
+      return false
     }
   }
 
   async function runMutation<T>(operation: () => Promise<T>): Promise<T> {
     if (mutationPending.value) throw new Error('training_program_mutation_pending')
     mutationPending.value = true
+    const wasLoading = status.value === 'pending'
+    revision.value++
     try {
-      return await operation()
+      const result = await operation()
+      revision.value++
+      error.value = null
+      status.value = 'success'
+      // A mutation response contains one program, not the superseded collection.
+      if (wasLoading) await load(true)
+      return result
+    }
+    catch (cause) {
+      if (wasLoading) await load(true, true)
+      throw cause
     }
     finally {
       mutationPending.value = false

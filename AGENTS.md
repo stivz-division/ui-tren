@@ -4,7 +4,7 @@
 
 ## Обзор проекта
 
-UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Реализованы недельное расписание, CRUD тренировочных программ, Telegram auth через same-origin BFF, подготовка и полный workflow выполнения тренировки с автосохранением, восстановление активной сессии и история тренировок.
+UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Laravel API `stivz-division/api-tren`. Реализованы недельное расписание, CRUD тренировочных программ, Telegram auth через same-origin BFF, выполнение тренировки с автосохранением, восстановление активной сессии, история, анализ и применение рекомендаций до старта следующей тренировки.
 
 ## Технологический стек
 
@@ -33,18 +33,21 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── assets/css/main.css           # Tailwind CSS и Nuxt UI styles
 │   ├── components/ui/                # Shell, header, back и bottom navigation
 │   ├── composables/useLocalClock.ts   # Клиентское время и timezone устройства с обновлением при resume
+│   ├── composables/useWorkoutPreparation.ts # Active check, cursor history, рекомендации и сериализованный старт
 │   ├── features/auth/                # Telegram bootstrap и in-memory auth state
 │   ├── features/training-programs/   # Schedule API, state, forms и screens
 │   ├── features/workout-sessions/    # Active session, carousel, autosave и complete/cancel
 │   ├── features/workout-history/     # Cursor history и результаты упражнений
+│   ├── features/workout-analysis/    # Общий кеш, polling, анализ и apply/reject рекомендаций
 │   ├── utils/api-error.ts            # Общая нормализация transport/domain/validation errors
 │   ├── layouts/default.vue           # Общий AppShell
-│   └── pages/                        # Тонкие routes /, /programs*, /workout-session*, /workout-history
+│   └── pages/                        # Routes /, /programs*, /workout-session*, /workout-history, /workout-analysis/:id
 ├── server/
 │   ├── api/auth.post.ts              # Telegram initData -> HttpOnly session cookie
 │   ├── api/api-tren/[...path].ts     # Allowlisted authenticated Laravel proxy
 │   └── utils/api-tren/               # Proxy paths, cookie и safe error helpers
 ├── shared/types/api-tren.ts          # Wire DTO Laravel API
+├── shared/types/workout-analysis.ts  # Анализ, метрики, этапы и рекомендации Laravel API
 ├── tests/e2e/                        # Playwright Telegram/mobile scenarios
 ├── Dockerfile                        # Development image для Nuxt UI
 ├── compose.yml                       # Локальный запуск единственного UI-сервиса
@@ -84,6 +87,9 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `app/pages/programs/` | Список, создание, просмотр и редактирование программ |
 | `app/pages/workout-session/` | Подготовка программы и выполнение активной сессии |
 | `app/pages/workout-history.vue` | История с курсорной пагинацией и результатами |
+| `app/pages/workout-analysis/[id].vue` | Ленивый анализ завершённой тренировки |
+| `app/composables/useWorkoutPreparation.ts` | Проверка active/history, рекомендации до PUT active |
+| `app/features/workout-analysis/index.ts` | Общий анализ, кеш по sessionId, публичные exports |
 | `server/api/auth.post.ts` | BFF auth и server-only local-подмена `TELEGRAM_INIT_DATA` |
 | `server/api/api-tren/[...path].ts` | Узкий allowlisted proxy к Laravel API |
 | `compose.yml` | Dev-only Docker Compose для Nuxt UI |

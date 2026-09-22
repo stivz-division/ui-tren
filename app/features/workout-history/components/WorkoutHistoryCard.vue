@@ -19,6 +19,7 @@ const completed = computed(() => props.session.exercises.filter(exercise => exer
     </div>
     <h2 class="break-words text-xl font-bold text-highlighted">{{ session.program_name }}</h2>
     <p class="mt-2 text-sm text-muted">Завершено упражнений: {{ completed }} из {{ session.exercises.length }}</p>
+    <UButton v-if="session.status === 'completed'" :to="`/workout-analysis/${session.id}`" label="Анализ тренировки" icon="i-lucide-chart-no-axes-combined" variant="soft" class="mt-4 min-h-11" />
     <details class="mt-4 border-t border-default pt-3">
       <summary class="min-h-11 cursor-pointer py-3 font-medium text-primary">Результаты упражнений</summary>
       <p class="pt-2 text-xs font-medium text-toned">Подходы × повторы · вес</p>

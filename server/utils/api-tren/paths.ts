@@ -10,6 +10,8 @@ const RULES: Array<{ methods: string[], pattern: RegExp }> = [
   { methods: ['GET'], pattern: /^exercises$/ },
   { methods: ['GET', 'PUT'], pattern: /^workout-sessions\/active$/ },
   { methods: ['GET'], pattern: /^workout-sessions$/ },
+  { methods: ['GET'], pattern: /^workout-sessions\/[1-9]\d*\/analysis$/ },
+  { methods: ['POST'], pattern: /^workout-recommendations\/[1-9]\d*\/(apply|reject)$/ },
   { methods: ['PUT'], pattern: /^workout-sessions\/[1-9]\d*\/exercises\/[1-9]\d*\/sets$/ },
   { methods: ['POST'], pattern: /^workout-sessions\/[1-9]\d*\/exercises\/[1-9]\d*\/(complete|skip|reopen)$/ },
   { methods: ['POST'], pattern: /^workout-sessions\/[1-9]\d*\/(complete|cancel)$/ },

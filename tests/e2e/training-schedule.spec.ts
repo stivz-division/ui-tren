@@ -469,10 +469,10 @@ test('edit 404 closes the stale editor and returns to the list', async ({ page }
 })
 
 test('workout start 404 closes the stale program', async ({ page }) => {
-  await page.route('**/api/api-tren/workout-sessions/active', route => route.fulfill({
-    status: 404,
-    json: { code: 'training_program_not_found' },
-  }))
+  await page.route('**/api/api-tren/workout-sessions/active', route => route.fulfill(route.request().method() === 'PUT'
+    ? { status: 404, json: { code: 'training_program_not_found' } }
+    : { json: { data: null } }))
+  await page.route('**/api/api-tren/workout-sessions?*', route => route.fulfill({ json: { data: [], meta: { next_cursor: null }, links: { next: null, prev: null } } }))
 
   await page.goto('/programs/1')
   await page.getByRole('button', { name: 'Начать тренировку' }).click()
