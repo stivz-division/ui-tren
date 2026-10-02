@@ -3,6 +3,7 @@ import type { WorkoutRecommendation } from '#shared/types/workout-analysis'
 import { compareSets } from '../model/stages'
 import type { RecommendationAction } from '../api/analysis'
 import SetComparisonList from './SetComparisonList.vue'
+import { ExerciseInfoButton } from '~/features/exercises'
 const props = defineProps<{ item: WorkoutRecommendation, exerciseName: string, replacementName?: string, pending: boolean, disabled: boolean }>()
 defineEmits<{ action: [id: number, action: RecommendationAction] }>()
 const rows = computed(() => compareSets(props.item.original_sets, props.item.proposed_sets))
@@ -15,6 +16,9 @@ const statuses = { proposed: 'Предложено', applied: 'Применен�
     <p class="mb-2 text-sm font-medium text-toned">{{ types[item.change_type] }}</p>
     <h3 class="break-words text-lg font-semibold text-highlighted">{{ exerciseName }}</h3>
     <p v-if="item.change_type === 'replacement'" class="mt-2 break-words text-default">Заменить на: {{ replacementName ?? 'Название упражнения недоступно' }}</p>
+    <div v-if="item.change_type === 'replacement' && item.replacement_exercise_id" class="mt-3">
+      <ExerciseInfoButton :exercise-id="item.replacement_exercise_id" :name="replacementName ?? 'Упражнение'" label="Посмотреть упражнение" />
+    </div>
     <p class="mt-2 text-sm font-medium text-toned">{{ statuses[item.status] }}</p>
     <SetComparisonList class="mt-3" :rows="rows" before-label="Было" after-label="Предложено" />
     <p class="mt-3 whitespace-pre-wrap break-words leading-relaxed text-default">{{ item.rationale }}</p>

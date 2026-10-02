@@ -82,6 +82,7 @@ tests/
 
 ## Коммуникация модулей
 
+- `exercises` владеет общим каталогом, detail API и модальным окном видео/описания. `training-programs` и `workout-analysis` используют его публичный `useExerciseCatalog`; сессия и рекомендации — публичный `ExerciseInfoButton`. Страница `/exercises` компонует публичный экран справочника. Данные detail загружаются только при открытии окна; устаревшие ответы не заменяют выбранное упражнение.
 - `workout-analysis` — самостоятельный slice с wire types в `shared/types/workout-analysis.ts`. Общий кеш `useState` индексируется по workoutSessionId; revisions защищают решения от устаревших reads. Polling принадлежит lifecycle видимого экрана.
 - `app/composables/useWorkoutPreparation.ts` координирует public exports `training-programs`, `workout-history`, `workout-sessions`, `workout-analysis`: проверяет активную сессию, ищет последнюю сессию программы курсором и сериализует применение рекомендаций со стартом. Компоненты анализа используются в истории и на подготовке.
 

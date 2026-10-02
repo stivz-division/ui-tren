@@ -6,7 +6,10 @@ export interface DataEnvelope<T> {
 
 export interface Exercise {
   id: number
+  code: string
   name: string
+  description: string | null
+  video_url: string | null
 }
 
 export interface PlannedSet {

@@ -1,7 +1,6 @@
 import type { Exercise } from '#shared/types/api-tren'
 import { fetchExerciseCatalog } from '../api/exercises'
-import type { ApiError } from '../model/errors'
-import { getExerciseFallbackName } from '../model/program'
+import type { ApiError } from '~/utils/api-error'
 import { useApiClient } from '~/utils/api-client'
 
 export type CatalogStatus = 'idle' | 'pending' | 'success' | 'unavailable' | 'error'
@@ -27,7 +26,7 @@ export function useExerciseCatalog() {
   }
 
   function getName(exerciseId: number): string {
-    return exercises.value.find(exercise => exercise.id === exerciseId)?.name ?? getExerciseFallbackName(exerciseId)
+    return exercises.value.find(exercise => exercise.id === exerciseId)?.name ?? `Упражнение №${exerciseId}`
   }
 
   return {

@@ -67,7 +67,10 @@ interface PlannedSetInput {
 
 interface Exercise {
   id: number
+  code: string
   name: string
+  description: string | null
+  video_url: string | null
 }
 
 interface PlannedExercise {
@@ -137,12 +140,14 @@ Timestamps сериализуются как `DATE_ATOM`/RFC 3339. Workout clock
 ```json
 {
   "data": [
-    { "id": 10, "name": "Жим лёжа" }
+    { "id": 10, "code": "bench_press", "name": "Жим лёжа", "description": "Техника выполнения", "video_url": "https://www.youtube.com/watch?v=3K259_IsCgg" }
   ]
 }
 ```
 
-Frontend использует этот каталог для выбора упражнений и разрешения `exercise_id` в человекочитаемое имя. Production mock-каталог не используется.
+`description` и `video_url` обязательны в ответе, но могут быть `null`. `GET /api/exercises/{exercise}` (положительный integer ID) возвращает `{ data: Exercise }` с теми же полями; отсутствующее упражнение — `404`, без авторизации — `401`. Проверено по backend OpenAPI 2026-10-03.
+
+Frontend использует каталог для выбора упражнений, разрешения `exercise_id` в имя и справочника `/exercises` с локальным поиском. Информация в модальном окне запрашивается через detail endpoint при открытии из справочника, активной тренировки или рекомендации замены. Production mock-каталог не используется.
 
 | Method | Path | Успех | Ответ |
 |---|---|---:|---|

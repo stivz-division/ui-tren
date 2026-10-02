@@ -35,6 +35,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── composables/useLocalClock.ts   # Клиентское время и timezone устройства с обновлением при resume
 │   ├── composables/useWorkoutPreparation.ts # Active check, cursor history, рекомендации и сериализованный старт
 │   ├── features/auth/                # Telegram bootstrap и in-memory auth state
+│   ├── features/exercises/           # Каталог, поиск, detail API и общая модалка с видео/описанием
 │   ├── features/training-programs/   # Schedule API, state, forms и screens
 │   ├── features/workout-sessions/    # Active session, carousel, autosave и complete/cancel
 │   ├── features/workout-history/     # Cursor history и результаты упражнений
@@ -89,6 +90,8 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 | `app/pages/programs/` | Список, создание, просмотр и редактирование программ |
 | `app/pages/workout-session/` | Подготовка программы и выполнение активной сессии |
 | `app/pages/workout-history.vue` | История с курсорной пагинацией и результатами |
+| `app/pages/exercises.vue` | Справочник упражнений с поиском |
+| `app/features/exercises/index.ts` | Public exports каталога и кнопки информации об упражнении |
 | `app/pages/workout-analysis/[id].vue` | Ленивый анализ завершённой тренировки |
 | `app/composables/useWorkoutPreparation.ts` | Проверка active/history, рекомендации до PUT active |
 | `app/features/workout-analysis/index.ts` | Общий анализ, кеш по sessionId, публичные exports |

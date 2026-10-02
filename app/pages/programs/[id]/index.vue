@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAuth } from '~/features/auth/composables/useAuth'
 import ProgramDetail from '~/features/training-programs/components/ProgramDetail.vue'
-import { useExerciseCatalog } from '~/features/training-programs/composables/useExerciseCatalog'
+import { useExerciseCatalog } from '~/features/exercises'
 import { useTrainingPrograms } from '~/features/training-programs/composables/useTrainingPrograms'
 
 const route = useRoute(); const id = Number(route.params.id); const toast = useToast()

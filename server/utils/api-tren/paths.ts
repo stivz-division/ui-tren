@@ -8,6 +8,7 @@ const RULES: Array<{ methods: string[], pattern: RegExp }> = [
   { methods: ['PUT', 'DELETE'], pattern: /^training-programs\/\d+$/ },
   { methods: ['GET'], pattern: /^training-programs\/weekdays\/[1-7]$/ },
   { methods: ['GET'], pattern: /^exercises$/ },
+  { methods: ['GET'], pattern: /^exercises\/[1-9]\d*$/ },
   { methods: ['GET', 'PUT'], pattern: /^workout-sessions\/active$/ },
   { methods: ['GET'], pattern: /^workout-sessions$/ },
   { methods: ['GET'], pattern: /^workout-sessions\/[1-9]\d*\/analysis$/ },

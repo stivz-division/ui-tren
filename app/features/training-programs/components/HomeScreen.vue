@@ -2,7 +2,7 @@
 import { useAuth } from '~/features/auth/composables/useAuth'
 import { useLocalClock } from '~/composables/useLocalClock'
 import { formatDate, getGreeting, getWeekday } from '~/utils/date'
-import { useExerciseCatalog } from '../composables/useExerciseCatalog'
+import { useExerciseCatalog } from '~/features/exercises'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import { buildHomeState } from '../model/home'
 import { ActiveWorkoutBanner, useActiveWorkoutSession } from '~/features/workout-sessions'

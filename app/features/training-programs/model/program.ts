@@ -49,9 +49,9 @@ export function getExerciseFallbackName(exerciseId: number): string {
 }
 
 export function ensureCurrentExerciseOption(
-  exercises: readonly Exercise[],
+  exercises: readonly Pick<Exercise, 'id' | 'name'>[],
   currentExerciseId: number | null,
-): Exercise[] {
+): Pick<Exercise, 'id' | 'name'>[] {
   if (currentExerciseId === null || exercises.some(exercise => exercise.id === currentExerciseId)) {
     return [...exercises]
   }

@@ -81,12 +81,12 @@ test('home refreshes the greeting immediately when the app becomes visible', asy
   await expect(page.getByText('Понедельник, 14 сентября')).toBeVisible()
 })
 
-test('home shows today workout without estimated duration and three navigation tabs', async ({ page }) => {
+test('home shows today workout without estimated duration and links to the exercise catalog', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Сегодня тренировка' })).toBeVisible()
   await expect(page.getByText('Грудь и трицепс')).toBeVisible()
   await expect(page.getByText('~45 минут')).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Основная навигация' }).getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('navigation', { name: 'Основная навигация' }).getByRole('link', { name: 'Упражнения', exact: true })).toHaveAttribute('href', '/exercises')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
   expect(overflow).toBe(false)

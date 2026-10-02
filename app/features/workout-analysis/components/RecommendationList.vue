@@ -2,7 +2,7 @@
 import type { WorkoutAnalysis } from '#shared/types/workout-analysis'
 import type { RecommendationAction } from '../api/analysis'
 import { stageMessage } from '../model/stages'
-import { useExerciseCatalog } from '~/features/training-programs'
+import { useExerciseCatalog } from '~/features/exercises'
 import RecommendationCard from './RecommendationCard.vue'
 const props = defineProps<{ analysis: WorkoutAnalysis, acting: number | null, disabled: boolean, proposedOnly?: boolean }>()
 defineEmits<{ action: [id: number, action: RecommendationAction] }>()

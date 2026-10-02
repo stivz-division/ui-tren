@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useExerciseCatalog } from '../composables/useExerciseCatalog'
+import { useExerciseCatalog } from '~/features/exercises'
 import { useTrainingPrograms } from '../composables/useTrainingPrograms'
 import ProgramCard from './ProgramCard.vue'
 import { useAuth } from '~/features/auth/composables/useAuth'

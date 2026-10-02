@@ -6,3 +6,7 @@ type Request = <T>(path: string, options?: ApiRequestOptions) => Promise<T>
 export async function fetchExerciseCatalog(request: Request): Promise<Exercise[]> {
   return (await request<DataEnvelope<Exercise[]>>('/exercises')).data
 }
+
+export async function fetchExercise(request: Request, id: number): Promise<Exercise> {
+  return (await request<DataEnvelope<Exercise>>(`/exercises/${id}`)).data
+}

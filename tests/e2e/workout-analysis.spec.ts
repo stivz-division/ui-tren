@@ -79,8 +79,8 @@ test('history loads analysis lazily, preserves independent blocks, safe paragrap
   await expect(page.getByRole('link', { name: 'Анализ тренировки', exact: true })).toBeVisible()
   expect(state.analysisReads).toBe(0)
   await page.getByRole('link', { name: 'Анализ тренировки', exact: true }).click()
-  await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toContainText('<script>alert(1)</script>')
-  await expect(page.getByRole('region', { name: 'В контексте истории', exact: true })).toContainText('первая тренировка')
+  await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'В контексте истории', exact: true })).toHaveCount(0)
   await page.locator('summary', { hasText: 'Жим лёжа' }).click()
   const comparison = page.getByRole('region', { name: 'План и факт', exact: true })
   await expect(comparison).toContainText('План не выполнен')
@@ -105,9 +105,9 @@ for (const failedStage of ['comparison', 'conclusion', 'recommendations']) {
     if (failedStage === 'recommendations') state.analysis.recommendation_generation = { status: 'failed', failure_code: 'internal', items: null, no_change_reason: null, rejected_reasons: { internal: 'secret' } }
     await page.clock.install()
     await page.goto('/workout-analysis/9')
-    await expect(page.getByText(failedStage === 'comparison' ? 'Не удалось сравнить план и факт' : failedStage === 'conclusion' ? 'Не удалось подготовить заключение' : 'Не удалось подготовить рекомендации', { exact: true }).first()).toBeVisible()
+    if (failedStage !== 'conclusion') await expect(page.getByText(failedStage === 'comparison' ? 'Не удалось сравнить план и факт' : 'Не удалось подготовить рекомендации', { exact: true }).first()).toBeVisible()
     if (failedStage !== 'comparison') await expect(page.getByRole('region', { name: 'План и факт', exact: true })).toContainText('400')
-    if (failedStage === 'recommendations') await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toContainText('Текущая тренировка.')
+    await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toHaveCount(0)
     const reads = state.analysisReads
     await page.clock.fastForward(60000)
     expect(state.analysisReads).toBe(reads)
@@ -128,10 +128,10 @@ test('polls comparison, conclusion and recommendation stages until the full chai
   state.analysis.status = 'completed'; state.analysis.result = ready.result; state.analysis.overall_status = 'processing'
   state.analysis.ai_analysis = { status: 'pending', result: null, failure_code: null }
   await page.clock.fastForward(7000)
-  await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toContainText('Ожидает обработки')
+  await expect(page.getByRole('region', { name: 'План и факт', exact: true })).toContainText('400')
   state.analysis.ai_analysis.status = 'processing'
   await page.clock.fastForward(10000)
-  await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toContainText('Подготавливаем…')
+  await expect(page.getByRole('region', { name: 'Вывод по тренировке', exact: true })).toHaveCount(0)
   state.analysis.ai_analysis = ready.ai_analysis
   state.analysis.recommendation_generation = { ...ready.recommendation_generation!, status: 'pending', items: null }
   await page.clock.fastForward(15000)

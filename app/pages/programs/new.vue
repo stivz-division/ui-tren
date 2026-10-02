@@ -2,7 +2,7 @@
 import { useAuth } from '~/features/auth/composables/useAuth'
 import type { DraftErrors } from '~/features/training-programs/model/form'
 import ProgramForm from '~/features/training-programs/components/ProgramForm.vue'
-import { useExerciseCatalog } from '~/features/training-programs/composables/useExerciseCatalog'
+import { useExerciseCatalog } from '~/features/exercises'
 import { useProgramDraft } from '~/features/training-programs/composables/useProgramDraft'
 import { useTrainingPrograms } from '~/features/training-programs/composables/useTrainingPrograms'
 import { useUnsavedProgramChanges } from '~/features/training-programs/composables/useUnsavedProgramChanges'
