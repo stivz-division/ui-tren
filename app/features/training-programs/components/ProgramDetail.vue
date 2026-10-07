@@ -3,6 +3,7 @@ import type { Exercise, TrainingProgram } from '#shared/types/api-tren'
 import { getExerciseFallbackName, WEEKDAY_LABELS } from '../model/program'
 import DeleteProgramSheet from './DeleteProgramSheet.vue'
 import GroupedSetSummary from '~/components/ui/GroupedSetSummary.vue'
+import { ExerciseInfoButton } from '~/features/exercises'
 
 const props = defineProps<{ program: TrainingProgram, catalog: Exercise[], startPending: boolean, deletePending: boolean }>()
 defineEmits<{ start: [], delete: [] }>()
@@ -21,9 +22,12 @@ const exerciseName = (id: number) => props.catalog.find(item => item.id === id)?
       <div class="rounded-[18px] border border-accented bg-default px-4 shadow-sm">
         <p class="pt-2 text-xs font-medium text-toned">Подходы × повторы · вес</p>
         <ul class="divide-y divide-default">
-          <li v-for="exercise in program.exercises" :key="exercise.position" class="py-2">
-            <h3 class="mb-0.5 break-words text-base font-medium leading-5 text-highlighted">{{ exerciseName(exercise.exercise_id) }}</h3>
-            <GroupedSetSummary :sets="exercise.sets" prominent />
+          <li v-for="exercise in program.exercises" :key="exercise.position" class="flex items-start gap-3 py-2">
+            <div class="min-w-0 flex-1">
+              <h3 class="mb-0.5 break-words text-base font-medium leading-5 text-highlighted">{{ exerciseName(exercise.exercise_id) }}</h3>
+              <GroupedSetSummary :sets="exercise.sets" prominent />
+            </div>
+            <ExerciseInfoButton :exercise-id="exercise.exercise_id" :name="exerciseName(exercise.exercise_id)" />
           </li>
         </ul>
       </div>
