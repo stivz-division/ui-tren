@@ -356,3 +356,15 @@ interface WorkoutSessionHistoryPage {
 - Polling 4 секунды с увеличением до 20 секунд обслуживает ожидаемые незавершённые этапы, прекращается на завершённой/ошибочной цепочке, transport error, 404, скрытии или уходе с экрана. Null после failed предыдущего этапа не вызывает бесконечный polling.
 
 Ограничения: нет публичного перезапуска анализа, отмены apply/reject, endpoint рекомендаций программы или фильтра training_program_id у истории. Повтор одинакового решения сервер поддерживает; противоположное решение/устаревшее предложение может вернуть 409. Рекомендации возможны после первой тренировки, но не гарантированы.
+
+## Замена упражнения в активной тренировке (2026-10-12)
+
+Источник: локальный `api-tren/openapi.json`; domain codes сверены с `bootstrap/app.php` backend.
+
+- `POST /workout-sessions/{sessionId}/exercises/{exerciseId}/replace` принимает `request_id` (UUID), `replacement_exercise_id`, `sets` (1–100, те же правила repetitions/working_weight_kg), `replace_in_plan` (default false). Возвращает полную `WorkoutSession` в `{ data }`.
+- Новая замена разрешена только для `in_progress` session и `pending` exercise. Перед заменой UI дожидается сохранения черновиков. Завершённое/пропущенное упражнение сначала нужно открыть снова.
+- `exercise_id` остаётся исходным идентификатором позиции для всех команд, включая повторную замену. Для текущего названия, видео и плановых подходов используется `effective_exercise: { exercise_id, name, planned_sets }`; исходные `name`/`planned_sets` не изменяются.
+- `replacement` nullable, содержит `request_id` и `replace_in_plan`; `included_in_analysis=false` для замены только на текущую сессию. При `replace_in_plan=true` меняются программа и нагрузка для анализа текущей сессии; UI перечитывает кеш программ.
+- Повтор UUID с тем же нормализованным payload возвращает текущую сессию без сброса прогресса, включая terminal session. Другой payload с тем же UUID — 409. UI сохраняет UUID для явного повтора неизменённой формы, автоматически mutation не повторяет; после ошибки перечитывает active и проверяет `replacement.request_id`.
+- Ошибки: `workout_replacement_candidate_not_found` (422), `workout_replacement_plan_conflict`, `invalid_workout_exercise_replacement`, `workout_replacement_request_conflict`, `exercise_already_added_to_workout` (409), а также общие session/state/lock errors. Ошибки полей сохраняются в форме.
+- На экране выполнения кнопка «Заменить упражнение» открывает каталог с поиском и редактор подходов. Флаг «Заменить и в программе» по умолчанию выключен; текущие effective IDs исключены из выбора.

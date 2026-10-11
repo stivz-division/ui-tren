@@ -1,4 +1,4 @@
-import type { DataEnvelope, PlannedSetInput, WorkoutSession } from '#shared/types/api-tren'
+import type { DataEnvelope, PlannedSetInput, ReplaceWorkoutExerciseInput, WorkoutSession } from '#shared/types/api-tren'
 import type { ApiRequestOptions } from '~/utils/api-client'
 
 type Request = <T>(path: string, options?: ApiRequestOptions) => Promise<T>
@@ -31,4 +31,10 @@ export async function changeWorkoutExercise(request: Request, sessionId: number,
 
 export async function finishWorkoutSession(request: Request, sessionId: number, action: SessionAction): Promise<WorkoutSession> {
   return (await request<DataEnvelope<WorkoutSession>>(`/workout-sessions/${sessionId}/${action}`, { method: 'POST' })).data
+}
+
+export async function replaceWorkoutExercise(request: Request, sessionId: number, exerciseId: number, input: ReplaceWorkoutExerciseInput): Promise<WorkoutSession> {
+  return (await request<DataEnvelope<WorkoutSession>>(`/workout-sessions/${sessionId}/exercises/${exerciseId}/replace`, {
+    method: 'POST', body: { ...input },
+  })).data
 }

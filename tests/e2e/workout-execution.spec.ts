@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import type { PlannedSetInput, TrainingProgram, WorkoutSession } from '../../shared/types/api-tren'
+import type { PlannedSetInput, ReplaceWorkoutExerciseInput, TrainingProgram, WorkoutSession } from '../../shared/types/api-tren'
 
 const set = { position: 1, repetitions: 10, working_weight_kg: 40 }
 function sessionFixture(): WorkoutSession {
@@ -17,6 +17,7 @@ async function setup(page: Page, existing = true) {
   const state = {
     active: existing ? initial : null as WorkoutSession | null,
     starts: 0, saves: [] as { exerciseId: number, sets: PlannedSetInput[] }[],
+    replacements: [] as ReplaceWorkoutExerciseInput[],
     programSaves: 0, actions: [] as string[],
     history: [] as WorkoutSession[],
     program: { id: 1, weekday: 7, name: initial.program_name, exercises: initial.exercises.map(exercise => ({ exercise_id: exercise.exercise_id, position: exercise.position, sets: exercise.planned_sets })) } as TrainingProgram,
@@ -28,7 +29,7 @@ async function setup(page: Page, existing = true) {
   await page.route('**/api/api-tren/**', async (route) => {
     const path = new URL(route.request().url()).pathname.replace('/api/api-tren', '')
     const method = route.request().method()
-    if (path === '/exercises') return route.fulfill({ json: { data: initial.exercises.map(exercise => ({ id: exercise.exercise_id, name: exercise.name })) } })
+    if (path === '/exercises') return route.fulfill({ json: { data: [...initial.exercises.map(exercise => ({ id: exercise.exercise_id, name: exercise.name })), { id: 40, name: 'Жим гантелей' }, { id: 50, name: 'Отжимания' }] } })
     if (path === '/training-programs') return route.fulfill({ json: { data: [state.program] } })
     if (path === '/training-programs/1' && method === 'PUT') {
       state.programSaves++
@@ -49,6 +50,19 @@ async function setup(page: Page, existing = true) {
       return route.fulfill({ json: { data: state.active } })
     }
     if (path === '/workout-sessions') return route.fulfill({ json: { data: state.history, links: { prev: null, next: null }, meta: { per_page: 15, prev_cursor: null, next_cursor: null } } })
+    if (path === '/workout-sessions/9/exercises/10/replace' && state.active) {
+      expect(method).toBe('POST')
+      const body = route.request().postDataJSON() as ReplaceWorkoutExerciseInput
+      expect(body.request_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
+      state.replacements.push(body)
+      const exercise = state.active.exercises[0]!
+      exercise.sets = body.sets.map((row, i) => ({ ...row, position: i + 1 }))
+      exercise.effective_exercise = { exercise_id: body.replacement_exercise_id, name: body.replacement_exercise_id === 40 ? 'Жим гантелей' : 'Отжимания', planned_sets: structuredClone(exercise.sets) }
+      exercise.replacement = { request_id: body.request_id, replace_in_plan: body.replace_in_plan }
+      exercise.included_in_analysis = body.replace_in_plan
+      if (body.replace_in_plan) state.program.exercises[0] = { exercise_id: body.replacement_exercise_id, position: 1, sets: structuredClone(exercise.sets) }
+      return route.fulfill({ json: { data: state.active } })
+    }
     const match = path.match(/^\/workout-sessions\/\d+\/exercises\/(\d+)\/(sets|complete|skip|reopen)$/)
     if (match && state.active) {
       const exerciseId = Number(match[1]); const action = match[2]!
@@ -363,4 +377,164 @@ test('reauthentication preserves the modal draft and only retries saving after u
   await expect(modal.getByText('Проверьте повторения')).toBeVisible()
   await expect(modal.getByLabel('Повторы')).toHaveValue('15')
   expect(attempts).toBe(2)
+})
+
+for (const inPlan of [false, true]) {
+  test(`replacement updates execution and keeps command identity (plan=${inPlan})`, async ({ page }) => {
+    const state = await setup(page)
+    await page.goto('/workout-session')
+    const original = page.getByRole('region', { name: 'Жим лёжа', exact: true })
+    await original.getByRole('button', { name: 'Заменить упражнение', exact: true }).click()
+    const modal = page.getByRole('dialog', { name: 'Заменить упражнение', exact: true })
+    await modal.getByRole('button', { name: 'Новое упражнение', exact: true }).click()
+    await expect(page.getByRole('option', { name: 'Тяга блока', exact: true })).toBeHidden()
+    await page.getByRole('option', { name: 'Жим гантелей', exact: true }).click()
+    await expect(page.getByRole('option')).toHaveCount(0)
+    await modal.getByLabel('Повторы').fill('12')
+    await modal.getByLabel('Вес, кг').fill('22,5')
+    if (inPlan) await modal.getByRole('checkbox', { name: 'Заменить и в программе' }).check()
+    await page.screenshot({ path: test.info().outputPath('exercise-replacement.png'), fullPage: true, animations: 'disabled' })
+    await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+    await expect(modal).toBeHidden()
+    const replacement = page.getByRole('region', { name: 'Жим гантелей', exact: true })
+    await expect(replacement.getByLabel('Вес, кг')).toHaveValue('22.5')
+    expect(state.replacements).toHaveLength(1)
+    expect(state.replacements[0]).toMatchObject({ replacement_exercise_id: 40, replace_in_plan: inPlan, sets: [{ repetitions: 12, working_weight_kg: 22.5 }] })
+    expect(state.program.exercises[0]?.exercise_id).toBe(inPlan ? 40 : 10)
+    await replacement.getByLabel('Повторы').fill('14')
+    await expect.poll(() => state.saves.at(-1)?.exerciseId).toBe(10)
+    await page.reload()
+    await expect(replacement.getByLabel('Повторы')).toHaveValue('14')
+    await replacement.getByRole('button', { name: 'Завершить упражнение', exact: true }).click()
+    await expect.poll(() => state.active?.exercises[0]?.status).toBe('completed')
+    await page.getByRole('button', { name: /Упражнение 1:/ }).click()
+    await expect(replacement.getByRole('button', { name: 'Заменить упражнение', exact: true })).toBeHidden()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false)
+  })
+}
+
+async function chooseReplacement(page: Page) {
+  await page.getByRole('region', { name: 'Жим лёжа', exact: true }).getByRole('button', { name: 'Заменить упражнение', exact: true }).click()
+  const modal = page.getByRole('dialog', { name: 'Заменить упражнение', exact: true })
+  await modal.getByRole('button', { name: 'Новое упражнение', exact: true }).click()
+  await page.getByRole('option', { name: 'Жим гантелей', exact: true }).click()
+  await expect(page.getByRole('option')).toHaveCount(0)
+  return modal
+}
+
+test('replacement cancellation and invalid sets do not submit; validation preserves the form', async ({ page }) => {
+  const state = await setup(page)
+  await page.goto('/workout-session')
+  let modal = await chooseReplacement(page)
+  await modal.getByRole('button', { name: 'Отмена', exact: true }).click()
+  await expect(modal).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Жим лёжа', exact: true }).getByRole('button', { name: 'Заменить упражнение', exact: true })).toBeFocused()
+  expect(state.replacements).toHaveLength(0)
+  modal = await chooseReplacement(page)
+  await modal.getByLabel('Повторы').fill('0')
+  await expect(modal.getByRole('button', { name: 'Подтвердить замену' })).toBeDisabled()
+  await modal.getByLabel('Повторы').fill('15')
+  await page.route('**/workout-sessions/9/exercises/10/replace', route => route.fulfill({ status: 422, json: { errors: { 'sets.0.repetitions': ['Проверьте повторения замены'] } } }))
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal.getByText('Проверьте повторения замены')).toBeVisible()
+  await expect(modal.getByLabel('Повторы')).toHaveValue('15')
+  expect(state.active?.exercises[0]?.effective_exercise).toBeUndefined()
+})
+
+test('replacement retry retains its UUID and a second replacement still uses the original command ID', async ({ page }) => {
+  const state = await setup(page)
+  const payloads: ReplaceWorkoutExerciseInput[] = []
+  await page.route('**/workout-sessions/9/exercises/10/replace', async (route) => {
+    payloads.push(route.request().postDataJSON())
+    if (payloads.length === 1) return route.abort('failed')
+    await route.fallback()
+  })
+  await page.goto('/workout-session')
+  const modal = await chooseReplacement(page)
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal.getByText('Не удалось выполнить запрос. Повторите попытку.')).toBeVisible()
+  expect(payloads).toHaveLength(1)
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal).toBeHidden()
+  expect(payloads[1]?.request_id).toBe(payloads[0]?.request_id)
+  await page.getByRole('region', { name: 'Жим гантелей', exact: true }).getByRole('button', { name: 'Заменить упражнение', exact: true }).click()
+  await modal.getByRole('button', { name: 'Новое упражнение', exact: true }).click()
+  await expect(page.getByRole('option', { name: 'Жим гантелей', exact: true })).toBeHidden()
+  await page.getByRole('option', { name: 'Отжимания', exact: true }).click()
+  await expect(page.getByRole('option')).toHaveCount(0)
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Отжимания', exact: true })).toBeVisible()
+  expect(state.replacements).toHaveLength(2)
+  expect(payloads[2]?.request_id).not.toBe(payloads[1]?.request_id)
+})
+
+test('replacement is blocked during autosave and reconciles a lost success response', async ({ page }) => {
+  const state = await setup(page)
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  await page.route('**/workout-sessions/9/exercises/10/sets', async (route) => { await gate; await route.fallback() })
+  await page.route('**/workout-sessions/9/exercises/10/replace', async (route) => {
+    const input = route.request().postDataJSON() as ReplaceWorkoutExerciseInput
+    const exercise = state.active!.exercises[0]!
+    exercise.effective_exercise = { exercise_id: 40, name: 'Жим гантелей', planned_sets: exercise.planned_sets }
+    exercise.replacement = { request_id: input.request_id, replace_in_plan: false }
+    await route.abort('failed')
+  })
+  await page.goto('/workout-session')
+  const first = page.getByRole('region', { name: 'Жим лёжа', exact: true })
+  await first.getByLabel('Повторы').fill('11')
+  await expect(first.getByRole('button', { name: 'Заменить упражнение', exact: true })).toBeDisabled()
+  release()
+  await expect(first.getByRole('button', { name: 'Заменить упражнение', exact: true })).toBeEnabled()
+  const modal = await chooseReplacement(page)
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Жим гантелей', exact: true })).toBeVisible()
+})
+
+test('replacement recovery closes the form when the active session changes', async ({ page }) => {
+  const state = await setup(page)
+  await page.route('**/workout-sessions/9/exercises/10/replace', async (route) => {
+    state.active = { ...sessionFixture(), id: 11 }
+    await route.fulfill({ status: 409, json: { code: 'workout_session_not_in_progress' } })
+  })
+  await page.goto('/workout-session')
+  const modal = await chooseReplacement(page)
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Жим лёжа', exact: true })).toBeVisible()
+  expect(state.replacements).toHaveLength(0)
+})
+
+test('history attributes replacement results to the effective exercise', async ({ page }) => {
+  const state = await setup(page)
+  const session = sessionFixture()
+  session.status = 'completed'
+  session.exercises[0]!.effective_exercise = { exercise_id: 40, name: 'Жим гантелей', planned_sets: [{ ...set }] }
+  session.exercises[0]!.sets = [{ ...set, working_weight_kg: 22.5 }]
+  state.history = [session]
+  await page.goto('/workout-history')
+  await page.getByText('Результаты упражнений').click()
+  const item = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Жим гантелей', exact: true }) })
+  await expect(item).toContainText('22,5 кг')
+})
+
+test('replacement plan conflict preserves the form and allows a session-only replacement', async ({ page }) => {
+  const state = await setup(page)
+  let attempts = 0
+  await page.route('**/workout-sessions/9/exercises/10/replace', async (route) => {
+    if (++attempts === 1) return route.fulfill({ status: 409, json: { code: 'workout_replacement_plan_conflict' } })
+    await route.fallback()
+  })
+  await page.goto('/workout-session')
+  const modal = await chooseReplacement(page)
+  await modal.getByRole('checkbox', { name: 'Заменить и в программе' }).check()
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal.getByText('Программа изменилась. Обновите её или замените упражнение только в этой тренировке.')).toBeVisible()
+  expect(attempts).toBe(1)
+  await modal.getByRole('checkbox', { name: 'Заменить и в программе' }).uncheck()
+  await modal.getByRole('button', { name: 'Подтвердить замену' }).click()
+  await expect(modal).toBeHidden()
+  expect(state.replacements[0]?.replace_in_plan).toBe(false)
 })

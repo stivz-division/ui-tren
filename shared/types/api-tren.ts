@@ -55,11 +55,28 @@ export interface UpdateTrainingProgramInput {
 export type WorkoutSessionStatus = 'in_progress' | 'completed' | 'cancelled'
 export type WorkoutExerciseStatus = 'pending' | 'completed' | 'skipped'
 
+export interface ReplaceWorkoutExerciseInput {
+  request_id: string
+  replacement_exercise_id: number
+  replace_in_plan: boolean
+  sets: PlannedSetInput[]
+}
+
+export interface EffectiveWorkoutExercise {
+  exercise_id: number
+  name: string
+  planned_sets: PlannedSet[]
+}
+
 export interface WorkoutExercise {
   exercise_id: number
   name: string
   position: number
   status: WorkoutExerciseStatus
+  // Optional for compatibility with sessions from older API deployments.
+  effective_exercise?: EffectiveWorkoutExercise
+  replacement?: { request_id: string, replace_in_plan: boolean } | null
+  included_in_analysis?: boolean
   planned_sets: PlannedSet[]
   sets: PlannedSet[]
 }

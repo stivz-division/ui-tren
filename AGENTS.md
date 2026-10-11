@@ -37,7 +37,7 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 │   ├── features/auth/                # Telegram bootstrap и in-memory auth state
 │   ├── features/exercises/           # Каталог, поиск, detail API и общая модалка с видео/описанием
 │   ├── features/training-programs/   # Schedule API, state, forms и screens
-│   ├── features/workout-sessions/    # Active session, carousel, autosave и complete/cancel
+│   ├── features/workout-sessions/    # Active session, carousel, autosave, замена упражнений и complete/cancel
 │   ├── features/workout-history/     # Cursor history и результаты упражнений
 │   ├── features/workout-analysis/    # Общий кеш, polling, анализ и apply/reject рекомендаций
 │   ├── utils/api-error.ts            # Общая нормализация transport/domain/validation errors
@@ -109,6 +109,8 @@ UI Tren — mobile-first frontend на Nuxt 4 для Telegram Mini App и Larave
 - `docker compose up`
 
 Compose запускает только Nuxt UI. Laravel API должен быть доступен отдельно по адресу из `NUXT_API_BASE`; для backend на хосте используется `http://host.docker.internal:8000/api`. При `APP_ENV=local` непустой server-only `TELEGRAM_INIT_DATA` заменяет browser `initData` только в BFF-запросе к Laravel.
+
+`node_modules` и `.nuxt` изолированы в Docker-томах `ui_node_modules` и `ui_nuxt`. Не убирайте изоляцию `.nuxt`: локальные Nuxt/Playwright-проверки записывают в неё абсолютные пути хоста, несовместимые с контейнером.
 
 ## Документация
 

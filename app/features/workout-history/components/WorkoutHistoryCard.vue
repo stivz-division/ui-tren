@@ -61,7 +61,7 @@ function formatSessionDate(value: string | null | undefined): string | null {
       <p class="pt-2 text-xs font-medium text-toned">Подходы × повторы · вес</p>
       <ul class="divide-y divide-default">
         <li v-for="exercise in session.exercises" :key="exercise.exercise_id" class="py-2">
-          <h3 class="mb-0.5 break-words text-base font-medium leading-5 text-highlighted">{{ exercise.name }}</h3>
+          <h3 class="mb-0.5 break-words text-base font-medium leading-5 text-highlighted">{{ (exercise.effective_exercise ?? exercise).name }}</h3>
           <p class="mt-1 text-sm text-muted">{{ labels[exercise.status] }}</p>
           <GroupedSetSummary v-if="exercise.sets.length" :sets="exercise.sets" prominent class="mt-1" />
         </li>

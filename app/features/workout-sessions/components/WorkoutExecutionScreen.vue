@@ -3,10 +3,20 @@ import { useWorkoutExecution } from '../composables/useWorkoutExecution'
 import { EXERCISE_STATUS } from '../model/status'
 import type { ExerciseAction } from '../api/sessions'
 import WorkoutExerciseCard from './WorkoutExerciseCard.vue'
+import WorkoutExerciseReplacementModal from './WorkoutExerciseReplacementModal.vue'
+import type { ReplaceWorkoutExerciseInput } from '#shared/types/api-tren'
+import { useTrainingPrograms } from '~/features/training-programs'
 
 const workout = useWorkoutExecution()
+const programs = useTrainingPrograms()
+const replacementTarget = shallowRef<number | null>(null)
+const replacementSessionId = shallowRef<number | null>(null)
+const replacementTrigger = shallowRef<HTMLElement | null>(null)
+const replacementExercise = computed(() => session.value?.id === replacementSessionId.value
+  ? session.value.exercises.find(exercise => exercise.exercise_id === replacementTarget.value)
+  : undefined)
 const { session, loading, loaded, error: loadError } = workout.active
-const { drafts, error, busy, acting, dirty, queued, canFinish, result } = workout
+const { drafts, error, busy, acting, dirty, queued, canFinish, result, replacementError } = workout
 const selected = shallowRef(0)
 const cancelOpen = shallowRef(false)
 const unfinishedOpen = shallowRef(false)
@@ -20,6 +30,33 @@ watch(() => session.value?.id, () => {
   initialIndex.value = Math.max(0, exercises.value.findIndex(exercise => exercise.status === 'pending'))
   selected.value = initialIndex.value
 }, { immediate: true })
+
+function openReplacement(exerciseId: number, event: MouseEvent) {
+  if (busy.value || error.value || drafts[exerciseId]?.dirty) return
+  replacementError.value = null
+  replacementSessionId.value = session.value?.id ?? null
+  replacementTrigger.value = event.currentTarget as HTMLElement
+  replacementTarget.value = exerciseId
+}
+async function replace(input: ReplaceWorkoutExerciseInput) {
+  if (replacementTarget.value === null) return
+  const previousReplacement = replacementExercise.value?.replacement?.request_id
+  const success = await workout.replaceExercise(replacementTarget.value, input)
+  if (success || !replacementExercise.value || replacementExercise.value.status !== 'pending' || replacementExercise.value.replacement?.request_id !== previousReplacement) replacementTarget.value = null
+  // Refresh the public program cache even if the mutation outcome was uncertain.
+  if (input.replace_in_plan) await programs.load(true)
+}
+watch(session, (value, previous) => {
+  if (replacementTarget.value === null) return
+  if (value?.id !== replacementSessionId.value) {
+    replacementTarget.value = null
+    return
+  }
+  if (acting.value) return
+  const current = value?.exercises.find(exercise => exercise.exercise_id === replacementTarget.value)
+  const before = previous?.exercises.find(exercise => exercise.exercise_id === replacementTarget.value)
+  if (value?.id !== previous?.id || current?.status !== 'pending' || current?.replacement?.request_id !== before?.replacement?.request_id) replacementTarget.value = null
+})
 
 function select(index: number) {
   carousel.value?.emblaApi?.scrollTo(index)
@@ -115,7 +152,7 @@ async function cancel() { if (await workout.finish('cancel')) cancelOpen.value =
     </UAlert>
     <template v-else>
       <nav aria-label="Упражнения тренировки" class="mb-2 flex flex-wrap gap-2">
-        <UButton v-for="(exercise, index) in exercises" :key="exercise.exercise_id" :aria-label="`Упражнение ${index + 1}: ${exercise.name}, ${EXERCISE_STATUS[exercise.status].label}`" :aria-current="selected === index ? 'step' : undefined" :color="EXERCISE_STATUS[exercise.status].color" :variant="selected === index ? 'solid' : 'soft'" :icon="exercise.status === 'pending' ? undefined : EXERCISE_STATUS[exercise.status].icon" :label="String(index + 1)" class="min-h-11 min-w-11 justify-center" :class="selected === index ? 'ring-2 ring-primary ring-offset-2 ring-offset-default' : ''" @click="select(index)" />
+        <UButton v-for="(exercise, index) in exercises" :key="exercise.exercise_id" :aria-label="`Упражнение ${index + 1}: ${(exercise.effective_exercise ?? exercise).name}, ${EXERCISE_STATUS[exercise.status].label}`" :aria-current="selected === index ? 'step' : undefined" :color="EXERCISE_STATUS[exercise.status].color" :variant="selected === index ? 'solid' : 'soft'" :icon="exercise.status === 'pending' ? undefined : EXERCISE_STATUS[exercise.status].icon" :label="String(index + 1)" class="min-h-11 min-w-11 justify-center" :class="selected === index ? 'ring-2 ring-primary ring-offset-2 ring-offset-default' : ''" @click="select(index)" />
       </nav>
       <p class="mb-4 text-xs text-muted">Нажмите на номер или листайте упражнения свайпом</p>
       <nav aria-label="Переключение упражнений" class="mb-5 flex items-center justify-between gap-3">
@@ -131,11 +168,22 @@ async function cancel() { if (await workout.finish('cancel')) cancelOpen.value =
       </UAlert>
       <UCarousel :key="session.id" ref="carousel" v-slot="{ item: exercise, index }" :items="exercises" :start-index="initialIndex" :watch-focus="false" :ui="{ item: 'basis-full', container: 'items-start' }" @select="selected = $event">
         <div :inert="selected !== index" :aria-hidden="selected !== index">
-          <WorkoutExerciseCard v-if="drafts[exercise.exercise_id]" :exercise="exercise" :rows="drafts[exercise.exercise_id]!.rows" :errors="workout.errorsFor(exercise.exercise_id)" :locked="acting || loading" :saving="queued > 0 && drafts[exercise.exercise_id]!.dirty" :dirty="drafts[exercise.exercise_id]!.dirty" :blocked="Boolean(error)" @edit="workout.edit(exercise.exercise_id, $event)" @action="action(exercise.exercise_id, $event)" />
+          <WorkoutExerciseCard v-if="drafts[exercise.exercise_id]" :exercise="exercise" :rows="drafts[exercise.exercise_id]!.rows" :errors="workout.errorsFor(exercise.exercise_id)" :locked="acting || loading || replacementTarget !== null" :saving="queued > 0 && drafts[exercise.exercise_id]!.dirty" :dirty="drafts[exercise.exercise_id]!.dirty" :blocked="Boolean(error)" @edit="workout.edit(exercise.exercise_id, $event)" @action="action(exercise.exercise_id, $event)" @replace="openReplacement(exercise.exercise_id, $event)" />
         </div>
       </UCarousel>
       <div class="mt-5 flex items-center justify-between gap-3 text-sm text-muted"><span>Выполнено или пропущено</span><span class="font-semibold text-highlighted">{{ processed }} / {{ exercises.length }}</span></div>
       <p v-if="!canFinish" id="workout-finish-hint" class="mt-5 text-sm text-muted">{{ dirty ? 'Дождитесь сохранения или исправьте введённые данные.' : 'Завершите или пропустите каждое упражнение, чтобы закончить тренировку.' }}</p>
+      <WorkoutExerciseReplacementModal
+        v-if="replacementExercise"
+        :key="`${session.id}-${replacementExercise.exercise_id}`"
+        :exercise="replacementExercise"
+        :exercises="exercises"
+        :busy="busy"
+        :error="replacementError"
+        :return-focus-to="replacementTrigger"
+        @close="replacementTarget = null"
+        @confirm="replace"
+      />
       <UModal
         v-model:open="unfinishedOpen"
         title="Остались незавершённые упражнения"

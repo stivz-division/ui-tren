@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { changeWorkoutExercise, fetchActiveWorkoutSession, finishWorkoutSession, saveExerciseSets, startWorkoutSession } from './sessions'
+import { changeWorkoutExercise, fetchActiveWorkoutSession, finishWorkoutSession, replaceWorkoutExercise, saveExerciseSets, startWorkoutSession } from './sessions'
 
 describe('startWorkoutSession', () => {
   it('sends the exact training program payload and returns the authoritative session', async () => {
@@ -46,4 +46,12 @@ describe('workout API contract', () => {
     await expect(finishWorkoutSession(request, 9, action)).resolves.toEqual(result)
     expect(request).toHaveBeenCalledWith(`/workout-sessions/9/${action}`, { method: 'POST' })
   })
+})
+
+it('replaces through the original command ID and returns the full authoritative session', async () => {
+  const input = { request_id: '60326968-3178-43e5-afb3-1e2f968b0090', replacement_exercise_id: 40, replace_in_plan: true, sets: [{ repetitions: 12, working_weight_kg: 22.5 }] }
+  const session = { id: 9, exercises: [{ exercise_id: 10, effective_exercise: { exercise_id: 40 } }] }
+  const request = vi.fn().mockResolvedValue({ data: session })
+  await expect(replaceWorkoutExercise(request, 9, 10, input)).resolves.toBe(session)
+  expect(request).toHaveBeenCalledExactlyOnceWith('/workout-sessions/9/exercises/10/replace', { method: 'POST', body: input })
 })

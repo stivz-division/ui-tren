@@ -20,6 +20,7 @@ describe('API Tren proxy allowlist', () => {
     ['POST', 'workout-sessions/9/exercises/10/complete'],
     ['POST', 'workout-sessions/9/exercises/10/skip'],
     ['POST', 'workout-sessions/9/exercises/10/reopen'],
+    ['POST', 'workout-sessions/9/exercises/10/replace'],
     ['POST', 'workout-sessions/9/complete'],
     ['POST', 'workout-sessions/9/cancel'],
   ])('allows %s %s', (method, path) => {
@@ -43,6 +44,9 @@ describe('API Tren proxy allowlist', () => {
     ['PUT', 'workout-sessions/9/exercises/10/complete'],
     ['POST', 'workout-sessions/9/exercises/10/sets'],
     ['POST', 'workout-sessions/9/exercises/10/delete'],
+    ['GET', 'workout-sessions/9/exercises/10/replace'],
+    ['PUT', 'workout-sessions/9/exercises/10/replace'],
+    ['POST', 'workout-sessions/9/exercises/0/replace'],
   ])('rejects %s %s', (method, path) => {
     expect(isAllowedApiRequest(method, path)).toBe(false)
   })

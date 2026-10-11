@@ -58,6 +58,11 @@ function parseErrorData(value: unknown): ErrorData {
 
 function domainMessage(status: number, code?: string): string | null {
   const workoutMessages: Record<string, string> = {
+    workout_replacement_candidate_not_found: 'Выбранное упражнение больше недоступно. Обновите каталог и выберите другое.',
+    workout_replacement_plan_conflict: 'Программа изменилась. Обновите её или замените упражнение только в этой тренировке.',
+    invalid_workout_exercise_replacement: 'Такая замена недоступна. Выберите другое упражнение.',
+    exercise_already_added_to_workout: 'Это упражнение уже используется в тренировке. Выберите другое.',
+    workout_replacement_request_conflict: 'Данные замены изменились. Закройте окно и выберите упражнение заново.',
     workout_session_not_found: 'Тренировка больше не найдена. Обновите данные.',
     workout_exercise_not_found: 'Упражнение больше не найдено. Обновите тренировку.',
     workout_session_not_in_progress: 'Эта тренировка уже завершена или отменена.',

@@ -1,9 +1,9 @@
 import { useAuth } from '~/features/auth/composables/useAuth'
-import type { PlannedSetInput, WorkoutSession } from '#shared/types/api-tren'
+import type { PlannedSetInput, ReplaceWorkoutExerciseInput, WorkoutSession } from '#shared/types/api-tren'
 import type { ApiError } from '~/utils/api-error'
 import { createSetRows, parseSetRows, type SetRow } from '~/utils/set-draft'
 import { useApiClient } from '~/utils/api-client'
-import { changeWorkoutExercise, finishWorkoutSession, saveExerciseSets, type ExerciseAction, type SessionAction } from '../api/sessions'
+import { changeWorkoutExercise, finishWorkoutSession, replaceWorkoutExercise, saveExerciseSets, type ExerciseAction, type SessionAction } from '../api/sessions'
 import { createSaveQueue } from '../model/save-queue'
 import { useActiveWorkoutSession } from './useActiveWorkoutSession'
 
@@ -20,6 +20,7 @@ export function useWorkoutExecution() {
   const { request } = useApiClient()
   const drafts = reactive<Record<number, ExerciseDraft>>({})
   const error = ref<ApiError | null>(null)
+  const replacementError = ref<ApiError | null>(null)
   const queued = shallowRef(0)
   const acting = shallowRef(false)
   const result = ref<WorkoutSession | null>(null)
@@ -138,6 +139,36 @@ export function useWorkoutExecution() {
     catch (cause) { error.value = cause as ApiError; await active.load(); return false }
     finally { acting.value = false }
   }
+  async function replaceExercise(exerciseId: number, input: ReplaceWorkoutExerciseInput): Promise<boolean> {
+    if (acting.value || active.loading.value || error.value) return false
+    acting.value = true
+    replacementError.value = null
+    const targetSessionId = active.session.value?.id
+    try {
+      await queue.idle()
+      const session = active.session.value
+      const exercise = session?.exercises.find(item => item.exercise_id === exerciseId)
+      if (error.value || !session || session.id !== targetSessionId || exercise?.status !== 'pending' || drafts[exerciseId]?.dirty) return false
+      await active.mutate(() => replaceWorkoutExercise(request, session.id, exerciseId, input))
+      syncDrafts()
+      return true
+    }
+    catch (cause) {
+      replacementError.value = cause as ApiError
+      // Resolve an unknown mutation outcome from the server without replaying it.
+      if (await active.load()) {
+        const session = active.session.value
+        const exercise = session?.exercises.find(item => item.exercise_id === exerciseId)
+        if (session?.id === targetSessionId && exercise?.replacement?.request_id === input.request_id) {
+          replacementError.value = null
+          syncDrafts()
+          return true
+        }
+      }
+      return false
+    }
+    finally { acting.value = false }
+  }
   async function finish(action: SessionAction): Promise<boolean> {
     if (acting.value || (action === 'complete' && !canFinish.value)) return false
     acting.value = true
@@ -174,5 +205,5 @@ export function useWorkoutExecution() {
     document.removeEventListener('visibilitychange', resume)
     window.removeEventListener('beforeunload', beforeUnload)
   })
-  return { active, drafts, error, busy, acting, dirty, queued, canFinish, result, edit, errorsFor, recover, reload, exerciseAction, finish }
+  return { active, drafts, error, replacementError, replaceExercise, busy, acting, dirty, queued, canFinish, result, edit, errorsFor, recover, reload, exerciseAction, finish }
 }
