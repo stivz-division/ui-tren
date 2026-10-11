@@ -48,6 +48,7 @@ export interface CreateTrainingProgramInput {
 }
 
 export interface UpdateTrainingProgramInput {
+  weekday?: Weekday
   name: string
   exercises: PlannedExerciseInput[]
 }

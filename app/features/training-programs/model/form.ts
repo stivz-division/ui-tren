@@ -153,10 +153,10 @@ function mapExercises(draft: ProgramDraft, errors: DraftErrors): PlannedExercise
   })
 }
 
-function validateDraft(draft: ProgramDraft, includeWeekday: boolean): MappingResult<PlannedExerciseInput[]> {
+function validateDraft(draft: ProgramDraft): MappingResult<PlannedExerciseInput[]> {
   const errors: DraftErrors = {}
 
-  if (includeWeekday && draft.weekday === null) errors.weekday = 'Выберите день недели'
+  if (draft.weekday === null) errors.weekday = 'Выберите день недели'
   if (!draft.name.trim()) errors.name = 'Введите название тренировки'
   if (draft.exercises.length === 0) errors.exercises = 'Добавьте хотя бы одно упражнение'
 
@@ -165,7 +165,7 @@ function validateDraft(draft: ProgramDraft, includeWeekday: boolean): MappingRes
 }
 
 export function toCreateProgramInput(draft: ProgramDraft): MappingResult<CreateTrainingProgramInput> {
-  const exercises = validateDraft(draft, true)
+  const exercises = validateDraft(draft)
   if (!exercises.ok) return exercises
 
   return {
@@ -179,12 +179,13 @@ export function toCreateProgramInput(draft: ProgramDraft): MappingResult<CreateT
 }
 
 export function toUpdateProgramInput(draft: ProgramDraft): MappingResult<UpdateTrainingProgramInput> {
-  const exercises = validateDraft(draft, false)
+  const exercises = validateDraft(draft)
   if (!exercises.ok) return exercises
 
   return {
     ok: true,
     value: {
+      weekday: draft.weekday!,
       name: draft.name.trim(),
       exercises: exercises.value,
     },

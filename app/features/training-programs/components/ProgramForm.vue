@@ -81,7 +81,7 @@ watch(() => props.errors, async (errors) => {
 
 <template>
   <form ref="formElement" class="space-y-7" :class="{ 'pb-32': mode === 'edit' }" novalidate @submit.prevent="$emit('submit')">
-    <WeekdaySelector v-model="model.weekday" :occupied="occupiedWeekdays" :readonly="mode === 'edit'" :invalid="Boolean(errors.weekday)" />
+    <WeekdaySelector v-model="model.weekday" :occupied="occupiedWeekdays" :invalid="Boolean(errors.weekday)" />
     <p v-if="errors.weekday" class="text-sm text-error" role="alert">{{ errors.weekday }}</p>
     <label class="block"><span class="mb-2 block text-base font-medium text-toned">Название</span><input v-model="model.name" class="min-h-14 w-full rounded-xl border border-default bg-default px-4 text-lg" :aria-invalid="Boolean(errors.name)" ><span v-if="errors.name" class="mt-1 block text-sm text-error" role="alert">{{ errors.name }}</span></label>
     <section aria-labelledby="exercises-title">

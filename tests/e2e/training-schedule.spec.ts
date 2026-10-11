@@ -422,7 +422,36 @@ for (const origin of ['/', '/programs']) {
   })
 }
 
-test('edit replaces name and exercises without weekday', async ({ page }) => {
+test('edit weekday conflict refreshes occupied days and preserves the draft', async ({ page }) => {
+  let collectionReads = 0
+  await page.route('**/api/api-tren/training-programs', async (route) => {
+    collectionReads += 1
+    if (collectionReads === 1) return route.fallback()
+    await route.fulfill({ json: { data: [
+      { id: 1, weekday: fixtureWeekday, name: 'Грудь и трицепс', exercises: [] },
+      { id: 2, weekday: 2, name: 'Другая тренировка', exercises: [] },
+    ] } })
+  })
+  await page.route('**/api/api-tren/training-programs/1', route => route.fulfill({
+    status: 409, json: { code: 'training_program_already_exists' },
+  }))
+
+  await page.goto('/programs/1/edit')
+  await page.getByRole('button', { name: 'Вт', exact: true }).click()
+  await page.getByLabel('Название').fill('Мой черновик')
+  await page.getByRole('button', { name: 'Сохранить изменения' }).click()
+
+  await expect(page.locator('fieldset[aria-invalid="true"]')).toBeFocused()
+  await expect(page.getByRole('alert').filter({ hasText: 'На выбранный день программа уже создана' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Вт. На этот день уже есть программа', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Вс', exact: true })).toBeEnabled()
+  await expect(page.getByLabel('Название')).toHaveValue('Мой черновик')
+  await expect(page.getByLabel('Повторы').first()).toHaveValue('6')
+  await page.getByRole('button', { name: 'Вс', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Вс', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('edit moves a program to a free weekday and updates the schedule', async ({ page }) => {
   let submittedBody: Record<string, unknown> | undefined
   await page.route('**/api/api-tren/training-programs/1', async (route) => {
     submittedBody = route.request().postDataJSON() as Record<string, unknown>
@@ -434,15 +463,21 @@ test('edit replaces name and exercises without weekday', async ({ page }) => {
   })
 
   await page.goto('/programs/1/edit')
+  await expect(page.getByRole('button', { name: 'Вс', exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Вс', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'Пн. На этот день уже есть программа', exact: true })).toBeDisabled()
+  await page.getByRole('button', { name: 'Вт', exact: true }).click()
   await page.getByLabel('Название').fill('Обновлённая тренировка')
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   await expect(page).toHaveURL(/\/programs\/1$/)
+  await expect(page.getByText('Вторник', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Назад', exact: true }).click()
   await expect(page).toHaveURL('/programs')
 
-  expect(submittedBody).not.toHaveProperty('weekday')
+  await expect(page.getByRole('link').filter({ hasText: 'Обновлённая тренировка' })).toContainText('Вторник')
   expect(submittedBody).toMatchObject({
+    weekday: 2,
     name: 'Обновлённая тренировка',
     exercises: [{
       exercise_id: 10,

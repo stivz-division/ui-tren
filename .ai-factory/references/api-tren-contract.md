@@ -179,12 +179,13 @@ interface CreateTrainingProgramInput {
 
 ```ts
 interface UpdateTrainingProgramInput {
+  weekday?: Weekday
   name: string
   exercises: PlannedExerciseInput[]
 }
 ```
 
-`PUT` полностью заменяет имя и упражнения. `name` обязателен. Field `weekday` запрещён: перенос программы на другой день не поддерживается.
+`PUT` полностью заменяет имя и упражнения. `name` обязателен. По OpenAPI backend от 2026-10-12 необязательный `weekday` (`1..7`) позволяет перенести программу на другой день. Занятый день возвращает `409 training_program_already_exists`; UI обновляет расписание и сохраняет черновик для выбора другого дня.
 
 ### Удаление и поиск по дню
 

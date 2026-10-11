@@ -155,10 +155,12 @@ describe('program draft', () => {
     })
   })
 
-  it('builds a replacing edit payload without weekday', () => {
-    expect(toUpdateProgramInput(populatedDraft())).toEqual({
+  it('builds a replacing edit payload with the changed weekday', () => {
+    const draft = { ...populatedDraft(), weekday: 5 as const }
+    expect(toUpdateProgramInput(draft)).toEqual({
       ok: true,
       value: {
+        weekday: 5,
         name: 'Тренировка',
         exercises: [{
           exercise_id: 10,
