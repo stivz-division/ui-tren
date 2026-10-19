@@ -55,6 +55,7 @@ async function submit() {
       v-model="draft"
       mode="create"
       :catalog="catalog.exercises.value"
+      :catalog-pending="catalog.status.value === 'pending' || catalog.status.value === 'idle'"
       :catalog-unavailable="catalog.status.value === 'unavailable'"
       :catalog-error="catalog.status.value === 'error' ? catalog.error.value?.message : undefined"
       :errors="errors"

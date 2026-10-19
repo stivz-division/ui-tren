@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import type { Exercise } from '#shared/types/api-tren'
-import { createEmptyExerciseDraft, moveExercise, type DraftErrors, type ProgramDraft } from '../model/form'
+import { createEmptyExerciseDraft, moveExercise, type DraftErrors, type ExerciseDraft, type ProgramDraft } from '../model/form'
 import PlannedExerciseEditor from './PlannedExerciseEditor.vue'
+import ProgramTextImportModal from './ProgramTextImportModal.vue'
 import WeekdaySelector from './WeekdaySelector.vue'
 
 const model = defineModel<ProgramDraft>({ required: true })
-const props = defineProps<{ mode: 'create' | 'edit', catalog: Exercise[], catalogUnavailable: boolean, catalogError?: string, errors: DraftErrors, pending: boolean }>()
+const props = defineProps<{ mode: 'create' | 'edit', catalog: Exercise[], catalogUnavailable: boolean, catalogPending?: boolean, catalogError?: string, errors: DraftErrors, pending: boolean }>()
 defineEmits<{ submit: [], retryCatalog: [] }>()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 const reorderAnnouncement = shallowRef('')
 let moveSequence = 0
+
+function importExercises(exercises: ExerciseDraft[]) {
+  if (props.pending) return
+  model.value = { ...model.value, exercises: [...model.value.exercises, ...exercises] }
+  reorderAnnouncement.value = `Добавлено упражнений: ${exercises.length}`
+}
 
 function removeExercise(index: number) { model.value = { ...model.value, exercises: model.value.exercises.filter((_, itemIndex) => itemIndex !== index) } }
 async function move(index: number, target: number) {
@@ -98,6 +105,13 @@ watch(() => props.errors, async (errors) => {
         <PlannedExerciseEditor v-for="(exercise, index) in model.exercises" :key="exercise.key" v-model="model.exercises[index]!" :index="index" :catalog="catalog" :excluded-ids="model.exercises.map(item => item.exerciseId).filter((id): id is number => id !== null)" :errors="errors" :can-move-up="index > 0" :can-move-down="index < model.exercises.length - 1" @remove="removeExercise(index)" @move-up="move(index, index - 1)" @move-down="move(index, index + 1)" @drag-start="startDrag(index, $event)" @drag-end="finishDrag" @drop="dropExercise(index, $event)" />
       </TransitionGroup>
       <UButton v-if="mode === 'create'" label="Добавить упражнение" icon="i-lucide-plus" color="neutral" variant="outline" block size="xl" class="mt-4" :disabled="catalogUnavailable || catalog.length === 0" @click="addExercise" />
+      <ProgramTextImportModal
+        v-if="mode === 'create'"
+        :catalog="catalog"
+        :existing-ids="model.exercises.flatMap(item => item.exerciseId === null ? [] : [item.exerciseId])"
+        :disabled="pending || catalogPending || catalogUnavailable || Boolean(catalogError) || catalog.length === 0"
+        @import="importExercises"
+      />
     </section>
     <div :class="{ 'fixed inset-x-0 bottom-0 z-40 border-t border-muted bg-default/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm': mode === 'edit' }">
       <div :class="{ 'mx-auto max-w-[480px] space-y-3 px-5 py-3': mode === 'edit' }">
