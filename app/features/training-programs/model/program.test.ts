@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ensureCurrentExerciseOption, findNextProgram, formatExerciseCount, sortProgramsByWeekday } from './program'
+import { ensureCurrentExerciseOption, findNextPrograms, formatExerciseCount, sortProgramsByWeekday } from './program'
 import { formatSetSummary } from '~/utils/set-summary'
 
 describe('training program presentation', () => {
@@ -39,19 +39,19 @@ describe('training program presentation', () => {
   })
 
   it('finds the next program across the end of the week', () => {
-    const next = findNextProgram(7, [
+    const next = findNextPrograms(7, [
       { id: 1, weekday: 1, name: 'Понедельник', exercises: [] },
       { id: 2, weekday: 5, name: 'Пятница', exercises: [] },
     ])
 
     expect(next).toEqual({
       daysUntil: 1,
-      program: { id: 1, weekday: 1, name: 'Понедельник', exercises: [] },
+      programs: [{ id: 1, weekday: 1, name: 'Понедельник', exercises: [] }],
     })
   })
 
   it('does not return the current day as a future program', () => {
-    expect(findNextProgram(1, [
+    expect(findNextPrograms(1, [
       { id: 1, weekday: 1, name: 'Сегодня', exercises: [] },
     ])).toBeNull()
   })

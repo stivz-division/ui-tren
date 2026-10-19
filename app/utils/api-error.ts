@@ -73,9 +73,6 @@ function domainMessage(status: number, code?: string): string | null {
   if (code && workoutMessages[code]) return workoutMessages[code]!
 
   if (status === 404 && code === 'training_program_not_found') return 'Программа не найдена'
-  if (status === 409 && code === 'training_program_already_exists') {
-    return 'На выбранный день программа уже создана'
-  }
   if (status === 409 && code === 'training_program_mutation_in_progress') {
     return 'Изменение расписания уже выполняется. Повторите попытку.'
   }

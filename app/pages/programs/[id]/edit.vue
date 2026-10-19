@@ -15,9 +15,6 @@ const programId = Number(route.params.id)
 const programsState = useTrainingPrograms()
 const catalog = useExerciseCatalog()
 const program = computed(() => programsState.findById(programId))
-const occupiedWeekdays = computed(() => programsState.programs.value
-  .filter(item => item.id !== programId)
-  .map(item => item.weekday))
 const draftState = useProgramDraft(`edit:${programId}`, program.value ?? undefined)
 const errors = shallowRef<DraftErrors>({})
 const toast = useToast()
@@ -60,10 +57,6 @@ async function submit() {
       await navigateTo('/programs', { replace: true })
       return
     }
-    if (error.code === 'training_program_already_exists') {
-      errors.value = { ...errors.value, weekday: error.message }
-      await programsState.load(true, true)
-    }
     if (error.code === 'training_program_mutation_in_progress') await programsState.load(true, true)
     if (['exercise_not_found', 'exercise_already_planned', 'training_program_must_contain_exercise'].includes(error.code ?? '')) {
       errors.value = { ...errors.value, exercises: error.message }
@@ -102,7 +95,6 @@ async function submit() {
       v-else
       v-model="draftState.draft.value"
       mode="edit"
-      :occupied-weekdays="occupiedWeekdays"
       :catalog="catalog.exercises.value"
       :catalog-unavailable="catalog.status.value === 'unavailable'"
       :catalog-error="catalog.status.value === 'error' ? catalog.error.value?.message : undefined"

@@ -48,9 +48,13 @@ function startTodayWorkout(programId: number) {
       <template #actions><UButton label="Повторить" color="error" variant="soft" size="lg" class="min-h-11" @click="load(true)" /></template>
     </UAlert>
     <div v-else-if="home" class="space-y-10">
-      <TodayWorkoutCard v-if="home.kind === 'workout' && !activeSession" :program="home.today" :pending="false" @start="startTodayWorkout(home.today.id)" />
+      <div v-if="home.kind === 'workout' && !activeSession" class="space-y-4">
+        <TodayWorkoutCard v-for="program in home.today" :key="program.id" :program="program" @start="startTodayWorkout(program.id)" />
+      </div>
       <RestDayCard v-else-if="home.kind === 'rest'" />
-      <UpcomingProgramCard v-if="home.next" :program="home.next.program" :days-until="home.next.daysUntil" :catalog="catalog.exercises.value" :detailed="home.kind === 'rest'" />
+      <div v-if="home.next" class="space-y-4">
+        <UpcomingProgramCard v-for="program in home.next.programs" :key="program.id" :program="program" :days-until="home.next.daysUntil" :catalog="catalog.exercises.value" :detailed="home.kind === 'rest'" />
+      </div>
     </div>
   </div>
 </template>

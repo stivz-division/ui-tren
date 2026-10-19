@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { Exercise, Weekday } from '#shared/types/api-tren'
+import type { Exercise } from '#shared/types/api-tren'
 import { createEmptyExerciseDraft, moveExercise, type DraftErrors, type ProgramDraft } from '../model/form'
 import PlannedExerciseEditor from './PlannedExerciseEditor.vue'
 import WeekdaySelector from './WeekdaySelector.vue'
 
 const model = defineModel<ProgramDraft>({ required: true })
-const props = defineProps<{ mode: 'create' | 'edit', occupiedWeekdays: Weekday[], catalog: Exercise[], catalogUnavailable: boolean, catalogError?: string, errors: DraftErrors, pending: boolean }>()
+const props = defineProps<{ mode: 'create' | 'edit', catalog: Exercise[], catalogUnavailable: boolean, catalogError?: string, errors: DraftErrors, pending: boolean }>()
 defineEmits<{ submit: [], retryCatalog: [] }>()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 const reorderAnnouncement = shallowRef('')
@@ -81,7 +81,7 @@ watch(() => props.errors, async (errors) => {
 
 <template>
   <form ref="formElement" class="space-y-7" :class="{ 'pb-32': mode === 'edit' }" novalidate @submit.prevent="$emit('submit')">
-    <WeekdaySelector v-model="model.weekday" :occupied="occupiedWeekdays" :invalid="Boolean(errors.weekday)" />
+    <WeekdaySelector v-model="model.weekday" :invalid="Boolean(errors.weekday)" />
     <p v-if="errors.weekday" class="text-sm text-error" role="alert">{{ errors.weekday }}</p>
     <label class="block"><span class="mb-2 block text-base font-medium text-toned">Название</span><input v-model="model.name" class="min-h-14 w-full rounded-xl border border-default bg-default px-4 text-lg" :aria-invalid="Boolean(errors.name)" ><span v-if="errors.name" class="mt-1 block text-sm text-error" role="alert">{{ errors.name }}</span></label>
     <section aria-labelledby="exercises-title">

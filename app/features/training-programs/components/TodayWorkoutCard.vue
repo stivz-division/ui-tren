@@ -4,15 +4,16 @@ import { formatExerciseCount } from '../model/program'
 
 defineProps<{ program: TrainingProgram, pending?: boolean }>()
 defineEmits<{ start: [] }>()
+const titleId = useId()
 </script>
 
 <template>
-  <section class="rounded-[18px] border border-primary/25 bg-elevated p-5" aria-labelledby="today-title">
+  <section class="rounded-[18px] border border-primary/25 bg-elevated p-5" :aria-labelledby="titleId">
     <div class="mb-5 flex flex-wrap items-center gap-3 text-primary">
       <span class="flex size-11 items-center justify-center rounded-full bg-primary text-inverted">
         <UIcon name="i-lucide-check" class="size-6" aria-hidden="true" />
       </span>
-      <h2 id="today-title" class="min-w-0 break-words text-xl font-bold">Сегодня тренировка</h2>
+      <h2 :id="titleId" class="min-w-0 break-words text-xl font-bold">Сегодня тренировка</h2>
     </div>
     <div class="mb-5 flex items-center justify-between gap-4">
       <div class="min-w-0">

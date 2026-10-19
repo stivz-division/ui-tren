@@ -175,8 +175,7 @@ for (const origin of ['/', '/programs', '/programs/new']) {
 
     await page.goto(origin)
     if (origin !== '/programs/new') await page.locator('a[href="/programs/new"]').click()
-    const occupied = [fixtureWeekday, fixtureWeekday === 7 ? 1 : fixtureWeekday + 1]
-    const available = [1, 2, 3, 4, 5, 6, 7].find(day => !occupied.includes(day))!
+    const available = fixtureWeekday
     const weekdayLabels = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
     await page.getByRole('button', { name: weekdayLabels[available] }).click()
     await page.getByRole('button', { name: 'Добавить упражнение' }).click()
@@ -324,7 +323,7 @@ test('server validation keeps the draft and focuses its first field error', asyn
   await expect(page.getByLabel('Название')).toHaveValue('Тренировка')
 })
 
-test('occupied weekday conflict refreshes days and focuses the selector', async ({ page }) => {
+test('create mutation conflict refreshes the schedule and preserves the draft', async ({ page }) => {
   let collectionReads = 0
   await page.route('**/api/api-tren/training-programs', async (route) => {
     if (route.request().method() === 'GET') {
@@ -332,7 +331,7 @@ test('occupied weekday conflict refreshes days and focuses the selector', async 
       await route.fallback()
       return
     }
-    await route.fulfill({ status: 409, json: { code: 'training_program_already_exists' } })
+    await route.fulfill({ status: 409, json: { code: 'training_program_mutation_in_progress' } })
   })
 
   await page.goto('/programs/new')
@@ -346,8 +345,7 @@ test('occupied weekday conflict refreshes days and focuses the selector', async 
   await page.getByLabel('Вес, кг').fill('90')
   await page.getByRole('button', { name: 'Создать тренировку' }).click()
 
-  await expect(page.locator('fieldset[aria-invalid="true"]')).toBeFocused()
-  await expect(page.getByRole('alert').filter({ hasText: 'На выбранный день программа уже создана' })).toBeVisible()
+  await expect(page.getByText('Изменение расписания уже выполняется. Повторите попытку.', { exact: true })).toBeVisible()
   await expect(page.getByLabel('Название')).toHaveValue('Тренировка')
   expect(collectionReads).toBeGreaterThanOrEqual(2)
 })
@@ -422,7 +420,7 @@ for (const origin of ['/', '/programs']) {
   })
 }
 
-test('edit weekday conflict refreshes occupied days and preserves the draft', async ({ page }) => {
+test('edit mutation conflict refreshes the schedule and preserves the draft', async ({ page }) => {
   let collectionReads = 0
   await page.route('**/api/api-tren/training-programs', async (route) => {
     collectionReads += 1
@@ -433,7 +431,7 @@ test('edit weekday conflict refreshes occupied days and preserves the draft', as
     ] } })
   })
   await page.route('**/api/api-tren/training-programs/1', route => route.fulfill({
-    status: 409, json: { code: 'training_program_already_exists' },
+    status: 409, json: { code: 'training_program_mutation_in_progress' },
   }))
 
   await page.goto('/programs/1/edit')
@@ -441,9 +439,8 @@ test('edit weekday conflict refreshes occupied days and preserves the draft', as
   await page.getByLabel('Название').fill('Мой черновик')
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
 
-  await expect(page.locator('fieldset[aria-invalid="true"]')).toBeFocused()
-  await expect(page.getByRole('alert').filter({ hasText: 'На выбранный день программа уже создана' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Вт. На этот день уже есть программа', exact: true })).toBeDisabled()
+  await expect(page.getByText('Изменение расписания уже выполняется. Повторите попытку.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Вт', exact: true })).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Вс', exact: true })).toBeEnabled()
   await expect(page.getByLabel('Название')).toHaveValue('Мой черновик')
   await expect(page.getByLabel('Повторы').first()).toHaveValue('6')
@@ -451,7 +448,7 @@ test('edit weekday conflict refreshes occupied days and preserves the draft', as
   await expect(page.getByRole('button', { name: 'Вс', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('edit moves a program to a free weekday and updates the schedule', async ({ page }) => {
+test('edit moves a program to an occupied weekday and keeps both programs', async ({ page }) => {
   let submittedBody: Record<string, unknown> | undefined
   await page.route('**/api/api-tren/training-programs/1', async (route) => {
     submittedBody = route.request().postDataJSON() as Record<string, unknown>
@@ -465,19 +462,20 @@ test('edit moves a program to a free weekday and updates the schedule', async ({
   await page.goto('/programs/1/edit')
   await expect(page.getByRole('button', { name: 'Вс', exact: true })).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Вс', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('button', { name: 'Пн. На этот день уже есть программа', exact: true })).toBeDisabled()
-  await page.getByRole('button', { name: 'Вт', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Пн', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Пн', exact: true }).click()
   await page.getByLabel('Название').fill('Обновлённая тренировка')
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   await expect(page).toHaveURL(/\/programs\/1$/)
-  await expect(page.getByText('Вторник', { exact: true })).toBeVisible()
+  await expect(page.getByText('Понедельник', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Назад', exact: true }).click()
   await expect(page).toHaveURL('/programs')
 
-  await expect(page.getByRole('link').filter({ hasText: 'Обновлённая тренировка' })).toContainText('Вторник')
+  await expect(page.getByRole('link').filter({ hasText: 'Обновлённая тренировка' })).toContainText('Понедельник')
+  await expect(page.locator('a[href="/programs/2"]')).toBeVisible()
   expect(submittedBody).toMatchObject({
-    weekday: 2,
+    weekday: 1,
     name: 'Обновлённая тренировка',
     exercises: [{
       exercise_id: 10,
@@ -743,5 +741,29 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     await expect(movedCard).toHaveAttribute('data-exercise-index', '2')
     await expect.poll(() => movedCard.evaluate(element => element.contains(document.activeElement))).toBe(true)
     await expect(movedCard.getByRole('button', { name: 'Перетащить упражнение 3' })).toBeInViewport({ ratio: 1 })
+  })
+}
+
+for (const restDay of [false, true]) {
+  test(`home shows all same-day programs (${restDay ? 'rest' : 'workout'})`, async ({ page }) => {
+    const weekday = restDay ? 1 : fixtureWeekday
+    await page.route('**/api/api-tren/training-programs', route => route.fulfill({ json: { data: [
+      { id: 10, weekday, name: 'Утренняя тренировка', exercises: [] },
+      { id: 20, weekday, name: 'Вечерняя тренировка', exercises: [] },
+    ] } }))
+    await page.route('**/api/api-tren/workout-sessions?*', route => route.fulfill({ json: { data: [], meta: { next_cursor: null } } }))
+    await page.goto('/')
+    await expect(page.getByText('Утренняя тренировка', { exact: true })).toBeVisible()
+    await expect(page.getByText('Вечерняя тренировка', { exact: true })).toBeVisible()
+    if (restDay) {
+      await expect(page.locator('a[href="/programs/10"]')).toBeVisible()
+      await expect(page.locator('a[href="/programs/20"]')).toBeVisible()
+    }
+    else {
+      const evening = page.getByRole('region', { name: 'Сегодня тренировка' }).filter({ hasText: 'Вечерняя тренировка' })
+      await evening.getByRole('button', { name: 'Начать тренировку' }).click()
+      await expect(page).toHaveURL('/workout-session/prepare?programId=20')
+      await expect(page.getByRole('heading', { name: 'Вечерняя тренировка', exact: true })).toBeVisible()
+    }
   })
 }

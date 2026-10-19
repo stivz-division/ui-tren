@@ -17,3 +17,16 @@ describe('program cache updates', () => {
     expect(removeCachedProgram([monday, friday], 1)).toEqual([friday])
   })
 })
+
+it('preserves same-day siblings when creating, updating, moving and deleting', () => {
+  const evening = { ...monday, id: 2, name: 'Вечер' }
+  const created = upsertCachedProgram([monday, friday], evening)
+  expect(created).toEqual([monday, evening, friday])
+  expect(upsertCachedProgram(created, { ...monday, name: 'Утро' })).toEqual([
+    { ...monday, name: 'Утро' }, evening, friday,
+  ])
+  expect(upsertCachedProgram(created, { ...friday, weekday: 1 })).toEqual([
+    monday, evening, { ...friday, weekday: 1 },
+  ])
+  expect(removeCachedProgram(created, monday.id)).toEqual([evening, friday])
+})

@@ -20,25 +20,26 @@ export const WEEKDAY_SHORT_LABELS: Record<Weekday, string> = {
   7: 'Вс',
 }
 
-export interface NextProgram {
+export interface NextPrograms {
   daysUntil: number
-  program: TrainingProgram
+  programs: TrainingProgram[]
 }
 
 export function sortProgramsByWeekday(programs: readonly TrainingProgram[]): TrainingProgram[] {
-  return [...programs].sort((left, right) => left.weekday - right.weekday)
+  return [...programs].sort((left, right) => left.weekday - right.weekday || left.id - right.id)
 }
 
-export function findNextProgram(
+export function findNextPrograms(
   currentWeekday: Weekday,
   programs: readonly TrainingProgram[],
-): NextProgram | null {
-  let result: NextProgram | null = null
+): NextPrograms | null {
+  let result: NextPrograms | null = null
 
-  for (const program of programs) {
+  for (const program of sortProgramsByWeekday(programs)) {
     const daysUntil = (program.weekday - currentWeekday + 7) % 7
     if (daysUntil === 0) continue
-    if (!result || daysUntil < result.daysUntil) result = { daysUntil, program }
+    if (!result || daysUntil < result.daysUntil) result = { daysUntil, programs: [program] }
+    else if (daysUntil === result.daysUntil) result.programs.push(program)
   }
 
   return result

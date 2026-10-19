@@ -28,19 +28,18 @@ describe('normalizeApiError', () => {
       data: {
         statusCode: 409,
         statusMessage: 'API request failed',
-        data: { code: 'training_program_already_exists' },
+        data: { code: 'training_program_mutation_in_progress' },
       },
     })).toMatchObject({
       kind: 'conflict',
-      code: 'training_program_already_exists',
-      message: 'На выбранный день программа уже создана',
+      code: 'training_program_mutation_in_progress',
+      message: 'Изменение расписания уже выполняется. Повторите попытку.',
     })
   })
 
   it.each([
     [401, undefined, 'Требуется повторная авторизация'],
     [404, 'training_program_not_found', 'Программа не найдена'],
-    [409, 'training_program_already_exists', 'На выбранный день программа уже создана'],
     [409, 'training_program_mutation_in_progress', 'Изменение расписания уже выполняется. Повторите попытку.'],
     [422, 'exercise_not_found', 'Одно из упражнений больше недоступно. Обновите выбор.'],
     [422, 'exercise_already_planned', 'Одно упражнение выбрано несколько раз.'],

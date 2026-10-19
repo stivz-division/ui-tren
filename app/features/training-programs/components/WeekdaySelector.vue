@@ -3,7 +3,7 @@ import type { Weekday } from '#shared/types/api-tren'
 import { WEEKDAY_SHORT_LABELS } from '../model/program'
 
 const model = defineModel<Weekday | null>({ required: true })
-withDefaults(defineProps<{ occupied?: Weekday[], readonly?: boolean, invalid?: boolean }>(), { occupied: () => [], readonly: false, invalid: false })
+withDefaults(defineProps<{ readonly?: boolean, invalid?: boolean }>(), { readonly: false, invalid: false })
 const days = [1, 2, 3, 4, 5, 6, 7] as Weekday[]
 </script>
 
@@ -20,18 +20,13 @@ const days = [1, 2, 3, 4, 5, 6, 7] as Weekday[]
         :key="day"
         type="button"
         class="flex min-h-12 flex-col items-center justify-center rounded-xl border px-2 py-2 font-medium"
-        :class="occupied.includes(day) ? 'cursor-not-allowed border-dashed border-default bg-muted text-muted' : model === day ? 'border-primary bg-primary text-inverted' : 'border-default bg-elevated text-toned'"
-        :disabled="occupied.includes(day)"
+        :class="model === day ? 'border-primary bg-primary text-inverted' : 'border-default bg-elevated text-toned'"
         :aria-pressed="model === day"
-        :aria-label="occupied.includes(day) ? `${WEEKDAY_SHORT_LABELS[day]}. На этот день уже есть программа` : WEEKDAY_SHORT_LABELS[day]"
+        :aria-label="WEEKDAY_SHORT_LABELS[day]"
         @click="model = day"
       >
         <span>{{ WEEKDAY_SHORT_LABELS[day] }}</span>
-        <span v-if="occupied.includes(day)" class="text-xs font-normal" aria-hidden="true">Занят</span>
       </button>
     </div>
-    <p v-if="!readonly && occupied.length" class="mt-3 text-sm text-muted">
-      Занятые дни недоступны: на них уже есть тренировка.
-    </p>
   </fieldset>
 </template>

@@ -155,7 +155,7 @@ Frontend использует каталог для выбора упражне�
 | `POST` | `/training-programs` | 201 | `{ data: TrainingProgram }` |
 | `PUT` | `/training-programs/{trainingProgramId}` | 200 | `{ data: TrainingProgram }` |
 | `DELETE` | `/training-programs/{trainingProgramId}` | 204 | пустое body |
-| `GET` | `/training-programs/weekdays/{weekday}` | 200 | `{ data: TrainingProgram }` |
+| `GET` | `/training-programs/weekdays/{weekday}` | 200 | `{ data: TrainingProgram[] }` |
 
 ### Создание программы
 
@@ -167,7 +167,7 @@ interface CreateTrainingProgramInput {
 }
 ```
 
-- На один weekday допускается одна программа.
+- На один weekday допускается несколько программ; создание и перенос на уже занятый день разрешены. Проверено по локальному `api-tren/openapi.json` 2026-10-19.
 - Если `name` отсутствует или равен `null`, backend использует `Тренировка`.
 - `exercises` — упорядоченный непустой list; `exercise_id` должны существовать и не повторяться.
 - У каждого упражнения от 1 до 100 подходов.
@@ -185,12 +185,12 @@ interface UpdateTrainingProgramInput {
 }
 ```
 
-`PUT` полностью заменяет имя и упражнения. `name` обязателен. По OpenAPI backend от 2026-10-12 необязательный `weekday` (`1..7`) позволяет перенести программу на другой день. Занятый день возвращает `409 training_program_already_exists`; UI обновляет расписание и сохраняет черновик для выбора другого дня.
+`PUT` полностью заменяет имя и упражнения. `name` обязателен. По OpenAPI backend от 2026-10-19 необязательный `weekday` (`1..7`) позволяет перенести программу на другой день, включая день с другими программами. `409` означает выполняющуюся mutation расписания; UI обновляет расписание и сохраняет черновик.
 
 ### Удаление и поиск по дню
 
 - `DELETE` необратимо удаляет программу и возвращает `204`.
-- `GET /weekdays/{weekday}` требует integer `1..7`; отсутствие программы возвращает `training_program_not_found` (`404`), а не `{ data: null }`.
+- `GET /weekdays/{weekday}` требует integer `1..7` и возвращает `{ data: TrainingProgram[] }`; при отсутствии программ — пустой массив. UI получает полное расписание через `GET /training-programs`, показывает все программы сегодняшнего и ближайшего будущего тренировочного дня; выбор и mutations адресуют программу по `id`.
 
 ## Выполнение тренировок
 
@@ -270,7 +270,6 @@ interface WorkoutSessionHistoryPage {
 | Code | HTTP | Действие UI |
 |---|---:|---|
 | `training_program_not_found` | 404 | Обновить расписание и закрыть устаревший экран |
-| `training_program_already_exists` | 409 | Показать существующую программу выбранного дня |
 | `training_program_mutation_in_progress` | 409 | Заблокировать дублирование, затем refetch |
 | `exercise_not_found` | 422 | Обновить каталог/форму; не повторять прежний payload |
 | `exercise_already_planned` | 422 | Подсветить duplicate exercise |

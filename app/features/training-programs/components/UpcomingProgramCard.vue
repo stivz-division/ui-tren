@@ -5,11 +5,12 @@ import { WEEKDAY_LABELS } from '../model/program'
 import ProgramCard from './ProgramCard.vue'
 
 defineProps<{ program: TrainingProgram, daysUntil: number, catalog: Exercise[], detailed?: boolean }>()
+const titleId = useId()
 </script>
 
 <template>
-  <section aria-labelledby="next-workout-title">
-    <h2 id="next-workout-title" class="mb-4 text-2xl font-bold text-highlighted">Следующая тренировка</h2>
+  <section :aria-labelledby="titleId">
+    <h2 :id="titleId" class="mb-4 text-2xl font-bold text-highlighted">Следующая тренировка</h2>
     <ProgramCard
       v-if="detailed"
       :program="program"

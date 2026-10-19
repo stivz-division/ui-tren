@@ -1,13 +1,13 @@
 import type { TrainingProgram, Weekday } from '#shared/types/api-tren'
-import type { NextProgram } from './program'
-import { findNextProgram } from './program'
+import type { NextPrograms } from './program'
+import { findNextPrograms } from './program'
 
 export type HomeState =
-  | { kind: 'workout', today: TrainingProgram, next: NextProgram | null }
-  | { kind: 'rest', next: NextProgram | null }
+  | { kind: 'workout', today: TrainingProgram[], next: NextPrograms | null }
+  | { kind: 'rest', next: NextPrograms | null }
 
 export function buildHomeState(currentWeekday: Weekday, programs: readonly TrainingProgram[]): HomeState {
-  const today = programs.find(program => program.weekday === currentWeekday)
-  const next = findNextProgram(currentWeekday, programs)
-  return today ? { kind: 'workout', today, next } : { kind: 'rest', next }
+  const today = programs.filter(program => program.weekday === currentWeekday)
+  const next = findNextPrograms(currentWeekday, programs)
+  return today.length > 0 ? { kind: 'workout', today, next } : { kind: 'rest', next }
 }
